@@ -111,8 +111,13 @@ def main():
         },
         {
             "url": f"{base_url}/task4.html",
-            "label": "Task 4 - Final Challenge", 
+            "label": "Task 4 - Fourth Challenge", 
             "filename": "qr_codes/task4_qr.png"
+        },
+        {
+            "url": f"{base_url}/task5.html",
+            "label": "Task 5 - WINNER!", 
+            "filename": "qr_codes/task5_qr.png"
         }
     ]
     
@@ -128,9 +133,9 @@ def main():
     print()
     print("📋 GAME INSTRUCTIONS:")
     print("=" * 50)
-    print("1. 🖨️  Print the 4 QR codes")
+    print("1. 🖨️  Print the 5 QR codes")
     print("2. 📍 Place QR codes at different locations in your office")
-    print("3. 👥 Teams scan QR codes in sequence (Task 1 → 2 → 3 → 4)")
+    print("3. 👥 Teams scan QR codes in sequence (Task 1 → 2 → 3 → 4 → 5)")
     print("4. 📝 Teams enter their Team ID when prompted (e.g., ALPHA, BRAVO)")
     print("5. 🎮 Teams enter previous task codes to proceed")
     print("6. 📊 Monitor all teams in real-time at: " + base_url + "/admin.html")
@@ -140,7 +145,8 @@ def main():
     print("• Task 1: Teams enter their Team ID → Get TC441")
     print("• Task 2: Teams enter Team ID + TC441 → Get TC242") 
     print("• Task 3: Teams enter Team ID + TC242 → Get TC803")
-    print("• Task 4: Teams enter Team ID + TC803 → Win! 🏆")
+    print("• Task 4: Teams enter Team ID + TC803 → Get TC200")
+    print("• Task 5: Teams enter Team ID + TC200 → 🏆 WINNER! 🏆")
     print()
     print("🔥 FIREBASE FEATURES:")
     print("-" * 30)

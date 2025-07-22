@@ -22,7 +22,7 @@ class FirebaseTreasureHunt {
             1: "TC441",
             2: "TC242", 
             3: "TC803",
-            4: "TC1201"
+            4: "TC200"
         };
         
         this.clues = {
@@ -566,7 +566,7 @@ async function verifyTask5() {
     }
     
     // Simple code check
-    if (code !== 'TC1201') {
+    if (code !== 'TC200') {
         alert('❌ Incorrect code! You need the code from Task 4.');
         return;
     }

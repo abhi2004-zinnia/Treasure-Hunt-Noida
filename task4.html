@@ -43,7 +43,7 @@
             
             <div class="task-code-section">
                 <h3>📝 Task Code to Remember:</h3>
-                <div class="task-code">TC1201</div>
+                <div class="task-code">TC200</div>
                 <p class="task-note">Remember this code for the FINAL task!</p>
             </div>
             
@@ -65,11 +65,6 @@
         }
         
         window.onload = function() {
-            // 🔒 SECURITY: Prevent direct URL access
-            if (!blockDirectAccess(4)) {
-                return;
-            }
-            
             const urlTeamId = getURLParameter('team');
             if (urlTeamId) {
                 document.getElementById('teamId4').value = urlTeamId.toUpperCase();
