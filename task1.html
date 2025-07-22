@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 1 - Treasure Hunt</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 🔥 Firebase SDK - ADD THESE 3 LINES -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="task-header">
+            <h1>🔍 Task 1 - Welcome!</h1>
+            <div class="progress-bar">
+                <div class="progress" style="width: 25%;"></div>
+            </div>
+        </div>
+        
+        <!-- Team ID Setup Section -->
+        <div class="team-setup-section" id="teamSetupSection">
+            <h2>👥 Enter Your Team ID</h2>
+            <div class="setup-box">
+                <p>Welcome to the Treasure Hunt! Please enter your assigned Team ID to start:</p>
+                <div class="team-input-group">
+                    <input type="text" id="teamIdInput" maxlength="15">
+                    <button onclick="setTeamIdTask1()" id="setTeamBtn">Start Task 1</button>
+                </div>
+                <p class="help-text">💡 Your Team ID was given to you by the organizer</p>
+            </div>
+        </div>
+        
+        <!-- Game Content Section (hidden initially) -->
+        <div class="game-content" id="gameContent" style="display: none;">
+            <div class="team-welcome" id="teamWelcome">
+                <h2>🎉 Welcome Team <span id="teamDisplayName">ALPHA</span>!</h2>
+                <p>Great! You're registered and ready to start your treasure hunt adventure.</p>
+                <div class="firebase-status">
+                    <p id="connectionStatus">🔥 Connected to Firebase - Real-time updates enabled!</p>
+                </div>
+            </div>
+            
+            <div class="clue-section">
+                <h2>🧩 Your Clue:</h2>
+                <div class="clue-box">
+                    <p>"गिनती में जो दिखे नहीं, पर उसके बिना कुछ भी चले नहीं। सोचो उस खोज के जनक को, और पहुँचो उसके नाम वाले ठिकाने को।"</p>
+                </div>
+            </div>
+            
+            <div class="task-code-section">
+                <h3>📝 Task Code to Remember:</h3>
+                <div class="task-code">TC441</div>
+                <p class="task-note">Remember this code! You'll need it for the next task.</p>
+            </div>
+            
+            <div class="team-info">
+                <p>Team ID: <span id="currentTeamId">Not Set</span></p>
+                <button onclick="completeTask1()" id="completeBtn">Mark Task 1 Complete</button>
+            </div>
+        </div>
+        
+        <div class="navigation">
+            <button onclick="goHome()" class="btn-secondary">🏠 Home</button>
+        </div>
+    </div>
+    
+    <!-- 🔥 CHANGED: Use firebase-script.js instead of script.js -->
+    <script src="firebase-script.js"></script>
+    <script>
+        function getURLParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+        
+        async function setTeamIdTask1() {
+            const teamIdInput = document.getElementById('teamIdInput');
+            const teamId = teamIdInput.value.trim().toUpperCase();
+            
+            if (!teamId) {
+                alert('Please enter your Team ID');
+                return;
+            }
+            
+            // 🔥 Firebase: Set team ID with real-time sync
+            if (await firebaseGame.setTeamId(teamId)) {
+                showGameContent(teamId);
+            }
+        }
+        
+        function showGameContent(teamId) {
+            // Hide setup section and show game content
+            document.getElementById('teamSetupSection').style.display = 'none';
+            document.getElementById('gameContent').style.display = 'block';
+            document.getElementById('currentTeamId').textContent = teamId;
+            document.getElementById('teamDisplayName').textContent = teamId;
+            
+            // 🔥 Firebase: Check task status in real-time
+            loadTaskStatus();
+        }
+        
+        async function loadTaskStatus() {
+            const teamId = firebaseGame.getCurrentTeamId();
+            if (!teamId) return;
+            
+            // 🔥 Firebase: Get real-time team progress
+            const progress = await firebaseGame.getTeamProgress(teamId);
+            if (progress && progress.completedTasks >= 1) {
+                document.getElementById('completeBtn').textContent = '✅ Task 1 Completed';
+                document.getElementById('completeBtn').disabled = true;
+                document.getElementById('completeBtn').style.opacity = '0.7';
+            }
+        }
+        
+        window.onload = async function() {
+            // Check for team ID in URL parameter
+            const urlTeamId = getURLParameter('team');
+            const currentTeamId = firebaseGame.getCurrentTeamId();
+            
+            if (urlTeamId) {
+                // Team ID provided in URL - auto-set it
+                const teamIdUpper = urlTeamId.toUpperCase();
+                if (await firebaseGame.setTeamId(teamIdUpper)) {
+                    showGameContent(teamIdUpper);
+                    return;
+                }
+            }
+            
+            if (currentTeamId) {
+                // Team ID already set
+                showGameContent(currentTeamId);
+            } else {
+                // Show team setup section
+                document.getElementById('teamSetupSection').style.display = 'block';
+                document.getElementById('gameContent').style.display = 'none';
+            }
+        };
+    </script>
+    
+    <style>
+        .team-setup-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+        
+        .setup-box {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .team-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .team-input-group input {
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 16px;
+            text-align: center;
+            text-transform: uppercase;
+        }
+        
+        .team-input-group input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .team-input-group button {
+            background: linear-gradient(145deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        
+        .team-input-group button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .help-text {
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+        
+        .team-welcome {
+            background: linear-gradient(145deg, #e6fffa, #b2f5ea);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 2px solid #38b2ac;
+        }
+        
+        .team-welcome h2 {
+            color: #2c7a7b;
+            margin-bottom: 10px;
+        }
+        
+        .team-welcome p {
+            color: #2d3748;
+            margin: 0;
+        }
+        
+        /* 🔥 Firebase status indicator */
+        .firebase-status {
+            background: linear-gradient(145deg, #e6fffa, #b2f5ea);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            text-align: center;
+            border: 2px solid #38b2ac;
+        }
+        
+        #connectionStatus {
+            color: #2c7a7b;
+            font-weight: 600;
+            margin: 0;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .game-content {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @media (max-width: 768px) {
+            .team-setup-section {
+                padding: 20px;
+                margin: 15px;
+            }
+        }
+    </style>
+</body>
+</html> 

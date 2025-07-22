@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Treasure Hunt</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 🔥 Firebase SDK - ADD THESE 3 LINES -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    
+    <style>
+        .admin-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .admin-controls button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-refresh {
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            color: white;
+        }
+        
+        .btn-refresh:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-clear {
+            background: linear-gradient(145deg, #f44336, #da190b);
+            color: white;
+        }
+        
+        .btn-clear:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(244, 67, 54, 0.3);
+        }
+        
+        .btn-export {
+            background: linear-gradient(145deg, #2196F3, #0b7dda);
+            color: white;
+        }
+        
+        .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+        }
+        
+        .real-time-indicator {
+            display: inline-block;
+            padding: 5px 10px;
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+            color: white;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(145deg, #ffffff, #f0f0f0);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            border-color: #6c5ce7;
+        }
+        
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .leaderboard-table th,
+        .leaderboard-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .leaderboard-table th {
+            background: linear-gradient(145deg, #6c5ce7, #5a4fcf);
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .leaderboard-table tr:hover {
+            background-color: #f8f9ff;
+        }
+        
+        .completed-team {
+            background: linear-gradient(145deg, #d4edda, #c3e6cb) !important;
+            font-weight: 600;
+        }
+        
+        .no-data {
+            text-align: center;
+            color: #999;
+            font-style: italic;
+            padding: 40px;
+        }
+        
+        .firebase-status {
+            display: inline-block;
+            padding: 5px 10px;
+            background: linear-gradient(145deg, #FF6B6B, #FF5252);
+            color: white;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            margin-left: 10px;
+        }
+        
+        .firebase-status.connected {
+            background: linear-gradient(145deg, #4CAF50, #45a049);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Admin Dashboard 
+            <span class="real-time-indicator">🔴 LIVE</span>
+            <span id="firebase-status" class="firebase-status">🔥 Connecting...</span>
+        </h1>
+        
+        <div class="admin-controls">
+            <button onclick="refreshData()" class="btn-refresh">🔄 Refresh</button>
+            <button onclick="clearAllData()" class="btn-clear">🗑️ Clear All Data</button>
+            <button onclick="exportData()" class="btn-export">📥 Export Data</button>
+            <button onclick="goHome()" class="btn-secondary">🏠 Home</button>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="totalTeams">0</div>
+                <div class="stat-label">Total Teams</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="completedTeams">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="inProgressTeams">0</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+        </div>
+        
+        <h2>🏆 Live Leaderboard</h2>
+        <table class="leaderboard-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Team ID</th>
+                    <th>Progress</th>
+                    <th>Current Task</th>
+                    <th>Completion Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody">
+                <tr>
+                    <td colspan="6" class="no-data">Loading teams...</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div style="margin-top: 30px; padding: 20px; background: #f8f9ff; border-radius: 10px; border-left: 4px solid #6c5ce7;">
+            <h3>🔥 Firebase Features Active:</h3>
+            <ul>
+                <li>✅ Real-time multi-device synchronization</li>
+                <li>✅ Live dashboard updates (no refresh needed)</li>
+                <li>✅ Teams can play from any device</li>
+                <li>✅ Progress tracked across all devices</li>
+                <li>✅ Automatic team creation (no pre-registration)</li>
+            </ul>
+        </div>
+    </div>
+    
+    <!-- 🔥 CHANGED: Use firebase-script.js instead of script.js -->
+    <script src="firebase-script.js"></script>
+    <script>
+        let refreshInterval;
+        
+        function updateFirebaseStatus(connected) {
+            const statusElement = document.getElementById('firebase-status');
+            if (connected) {
+                statusElement.textContent = '🔥 Connected';
+                statusElement.classList.add('connected');
+            } else {
+                statusElement.textContent = '🔥 Connecting...';
+                statusElement.classList.remove('connected');
+            }
+        }
+        
+        async function refreshData() {
+            try {
+                updateFirebaseStatus(true);
+                const teams = await firebaseGame.getAllTeams();
+                updateLeaderboard(teams);
+                updateStatistics(teams);
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                updateFirebaseStatus(false);
+            }
+        }
+        
+        async function clearAllData() {
+            const success = await firebaseGame.clearAllData();
+            if (success) {
+                refreshData();
+            }
+        }
+        
+        async function exportData() {
+            await firebaseGame.exportData();
+        }
+        
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+        
+        // Initialize dashboard when page loads
+        window.onload = function() {
+            updateFirebaseStatus(false);
+            refreshData();
+            
+            // Set up real-time listener
+            firebaseGame.listenToTeamUpdates(teams => {
+                updateFirebaseStatus(true);
+                updateLeaderboard(teams);
+                updateStatistics(teams);
+            });
+        };
+    </script>
+</body>
+</html> 

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Office Treasure Hunt</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <div class="hero-section">
+            <h1>🏆 Office Treasure Hunt</h1>
+            <p>Welcome to the ultimate office adventure!</p>
+            
+            <div class="options">
+                <div class="option-card">
+                    <h3>👥 For Teams</h3>
+                    <p>Scan the QR codes to start your treasure hunt journey!</p>
+                    <div class="team-setup">
+                        <input type="text" id="teamId" maxlength="10">
+                        <button onclick="setTeamId()">Start Hunt</button>
+                    </div>
+                </div>
+                
+                <div class="option-card">
+                    <h3>🎮 For Admin</h3>
+                    <p>Monitor team progress and view the leaderboard</p>
+                    <button onclick="goToAdmin()">Admin Dashboard</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h2>Game Rules</h2>
+            <ul>
+                <li>🔍 Scan QR codes in sequence</li>
+                <li>📝 Read each clue carefully</li>
+                <li>🔢 Submit the previous task code to proceed</li>
+                <li>⚡ Complete all 4 tasks to win!</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html> 
