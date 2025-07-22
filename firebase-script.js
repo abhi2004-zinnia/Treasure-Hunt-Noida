@@ -22,7 +22,8 @@ class FirebaseTreasureHunt {
             1: "TC441",
             2: "TC242", 
             3: "TC803",
-            4: "TC200"
+            4: "TC200",
+            5: "WINNER"
         };
         
         this.clues = {
