@@ -172,7 +172,7 @@
     <div class="container">
         <h1>📊 Admin Dashboard 
             <span class="real-time-indicator">🔴 LIVE</span>
-            <span id="firebase-status" class="firebase-status">🔥 Connecting...</span>
+            <span id="firebase-status" class="firebase-status">📡 Connecting...</span>
         </h1>
         
         <div class="admin-controls">
@@ -217,14 +217,10 @@
         </table>
         
         <div style="margin-top: 30px; padding: 20px; background: #f8f9ff; border-radius: 10px; border-left: 4px solid #6c5ce7;">
-            <h3>🔥 Firebase Features Active:</h3>
-            <ul>
-                <li>✅ Real-time multi-device synchronization</li>
-                <li>✅ Live dashboard updates (no refresh needed)</li>
-                <li>✅ Teams can play from any device</li>
-                <li>✅ Progress tracked across all devices</li>
-                <li>✅ Automatic team creation (no pre-registration)</li>
-            </ul>
+            <h3>🏴‍☠️ Treasure Hunt Wisdom:</h3>
+            <p style="font-style: italic; color: #6c5ce7; font-size: 1.1rem; margin: 0;">
+                "The real treasure isn't gold or jewels – it's the adventure of discovery and the bonds forged along the way!" 🗺️✨
+            </p>
         </div>
     </div>
     
@@ -236,10 +232,10 @@
         function updateFirebaseStatus(connected) {
             const statusElement = document.getElementById('firebase-status');
             if (connected) {
-                statusElement.textContent = '🔥 Connected';
+                statusElement.textContent = '📡 Connected';
                 statusElement.classList.add('connected');
             } else {
-                statusElement.textContent = '🔥 Connecting...';
+                statusElement.textContent = '📡 Connecting...';
                 statusElement.classList.remove('connected');
             }
         }
