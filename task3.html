@@ -63,7 +63,12 @@
             return urlParams.get(name);
         }
         
-        window.onload = function() {
+        window.onload = async function() {
+            // 🔒 SECURITY: Prevent direct URL access
+            if (!(await blockDirectAccess(3))) {
+                return;
+            }
+            
             const urlTeamId = getURLParameter('team');
             if (urlTeamId) {
                 document.getElementById('teamId3').value = urlTeamId.toUpperCase();
