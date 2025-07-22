@@ -411,15 +411,15 @@ async function verifyTask2() {
         return;
     }
     
-    // 🔒 SECURITY: Validate access
-    if (!validateTaskAccess(2, teamId, code)) {
-        alert('❌ Invalid code! Please complete Task 1 first to get the correct code.');
+    // 🔒 SEQUENCE LOCK: Check if team can access Task 2
+    if (!(await canAccessTask(teamId, 2))) {
+        showSequenceError(2);
         return;
     }
     
-    // 🔒 SECURITY: Check Firebase for task completion
-    if (!(await hasCompletedPreviousTask(teamId, 2))) {
-        alert('❌ You must complete Task 1 first!');
+    // Simple code check
+    if (code !== 'TC441') {
+        alert('❌ Incorrect code! You need the code from Task 1.');
         return;
     }
     
@@ -427,7 +427,6 @@ async function verifyTask2() {
         document.getElementById('clueSection').style.display = 'block';
         document.getElementById('teamDisplayName').textContent = teamId;
         document.querySelector('.verification-section').style.display = 'none';
-        setValidAccess(2); // 🔒 Allow access to Task 3
     }
 }
 
@@ -440,15 +439,15 @@ async function verifyTask3() {
         return;
     }
     
-    // 🔒 SECURITY: Validate access
-    if (!validateTaskAccess(3, teamId, code)) {
-        alert('❌ Invalid code! Please complete Task 2 first to get the correct code.');
+    // 🔒 SEQUENCE LOCK: Check if team can access Task 3
+    if (!(await canAccessTask(teamId, 3))) {
+        showSequenceError(3);
         return;
     }
     
-    // 🔒 SECURITY: Check Firebase for task completion
-    if (!(await hasCompletedPreviousTask(teamId, 3))) {
-        alert('❌ You must complete Task 2 first!');
+    // Simple code check
+    if (code !== 'TC242') {
+        alert('❌ Incorrect code! You need the code from Task 2.');
         return;
     }
     
@@ -456,7 +455,6 @@ async function verifyTask3() {
         document.getElementById('clueSection3').style.display = 'block';
         document.getElementById('teamDisplayName').textContent = teamId;
         document.querySelector('.verification-section').style.display = 'none';
-        setValidAccess(3); // 🔒 Allow access to Task 4
     }
 }
 
@@ -469,15 +467,15 @@ async function verifyTask4() {
         return;
     }
     
-    // 🔒 SECURITY: Validate access
-    if (!validateTaskAccess(4, teamId, code)) {
-        alert('❌ Invalid code! Please complete Task 3 first to get the correct code.');
+    // 🔒 SEQUENCE LOCK: Check if team can access Task 4
+    if (!(await canAccessTask(teamId, 4))) {
+        showSequenceError(4);
         return;
     }
     
-    // 🔒 SECURITY: Check Firebase for task completion
-    if (!(await hasCompletedPreviousTask(teamId, 4))) {
-        alert('❌ You must complete Task 3 first!');
+    // Simple code check
+    if (code !== 'TC803') {
+        alert('❌ Incorrect code! You need the code from Task 3.');
         return;
     }
     
@@ -485,7 +483,6 @@ async function verifyTask4() {
         document.getElementById('clueSection4').style.display = 'block';
         document.getElementById('teamDisplayName').textContent = teamId;
         document.querySelector('.verification-section').style.display = 'none';
-        setValidAccess(4); // 🔒 Allow access to Task 5
     }
 }
 
@@ -501,7 +498,6 @@ async function completeTask1() {
         document.getElementById('completeBtn').textContent = '✅ Task 1 Completed!';
         document.getElementById('completeBtn').disabled = true;
         document.getElementById('completeBtn').style.opacity = '0.7';
-        setValidAccess(1); // 🔒 Allow access to Task 2
         alert('🎉 Great! You have completed Task 1. Now find the QR code for Task 2!');
     }
 }
@@ -518,7 +514,6 @@ async function completeTask2() {
         document.getElementById('completeBtn2').textContent = '✅ Task 2 Completed!';
         document.getElementById('completeBtn2').disabled = true;
         document.getElementById('completeBtn2').style.opacity = '0.7';
-        setValidAccess(2); // 🔒 Allow access to Task 3
         alert('🎉 Excellent! Task 2 completed. Find the QR code for Task 3!');
     }
 }
@@ -535,8 +530,7 @@ async function completeTask3() {
         document.getElementById('completeBtn3').textContent = '✅ Task 3 Completed!';
         document.getElementById('completeBtn3').disabled = true;
         document.getElementById('completeBtn3').style.opacity = '0.7';
-        setValidAccess(3); // 🔒 Allow access to Task 4
-        alert('🎉 Outstanding! Task 3 completed. Find the final QR code for Task 4!');
+        alert('🎉 Outstanding! Task 3 completed. Find the QR code for Task 4!');
     }
 }
 
@@ -552,7 +546,6 @@ async function completeTask4() {
         document.getElementById('completeBtn4').textContent = '✅ Task 4 Completed!';
         document.getElementById('completeBtn4').disabled = true;
         document.getElementById('completeBtn4').style.opacity = '0.7';
-        setValidAccess(4); // 🔒 Allow access to Task 5
         alert('🎉 Amazing! Task 4 completed. Find the final QR code for the WINNER challenge!');
     }
 }
@@ -566,15 +559,15 @@ async function verifyTask5() {
         return;
     }
     
-    // 🔒 SECURITY: Validate access
-    if (!validateTaskAccess(5, teamId, code)) {
-        alert('❌ Invalid code! Please complete Task 4 first to get the correct code.');
+    // 🔒 SEQUENCE LOCK: Check if team can access Task 5
+    if (!(await canAccessTask(teamId, 5))) {
+        showSequenceError(5);
         return;
     }
     
-    // 🔒 SECURITY: Check Firebase for task completion
-    if (!(await hasCompletedPreviousTask(teamId, 5))) {
-        alert('❌ You must complete Task 4 first!');
+    // Simple code check
+    if (code !== 'TC1201') {
+        alert('❌ Incorrect code! You need the code from Task 4.');
         return;
     }
     
@@ -640,61 +633,34 @@ function goToAdmin() {
     window.location.href = 'admin.html';
 }
 
-// 🔒 SECURITY: Validate task access
-function validateTaskAccess(taskNumber, teamId, providedCode) {
-    const expectedCodes = {
-        2: 'TC441', // Task 2 requires completing Task 1
-        3: 'TC242', // Task 3 requires completing Task 2  
-        4: 'TC803', // Task 4 requires completing Task 3
-        5: 'TC1201' // Task 5 requires completing Task 4
-    };
-    
+// 🔒 SIMPLE SEQUENCE LOCK: Check if team can access this task
+async function canAccessTask(teamId, taskNumber) {
     // Task 1 is always accessible
     if (taskNumber === 1) return true;
     
-    // Check if provided code matches expected
-    if (providedCode !== expectedCodes[taskNumber]) {
-        return false;
-    }
-    
-    return true;
-}
-
-// 🔒 SECURITY: Check if team has completed required previous tasks
-async function hasCompletedPreviousTask(teamId, taskNumber) {
-    if (taskNumber === 1) return true; // Task 1 has no prerequisites
-    
+    // For other tasks, check if previous task is completed
     try {
         const progress = await firebaseGame.getTeamProgress(teamId);
-        if (!progress) return false;
+        if (!progress) {
+            return false; // Team doesn't exist yet
+        }
         
-        // Must have completed (taskNumber - 1) tasks to access taskNumber
-        return progress.completedTasks >= (taskNumber - 1);
+        const requiredCompletedTasks = taskNumber - 1;
+        const hasCompleted = progress.completedTasks >= requiredCompletedTasks;
+        
+        console.log(`🔒 Team ${teamId} - Task ${taskNumber}: Completed=${progress.completedTasks}, Required=${requiredCompletedTasks}, Access=${hasCompleted}`);
+        
+        return hasCompleted;
     } catch (error) {
-        console.error('Error checking task prerequisites:', error);
+        console.error('Error checking task access:', error);
         return false;
     }
 }
 
-// 🔒 SECURITY: Block direct URL access
-function blockDirectAccess(taskNumber) {
-    // Allow access only if coming from previous task or home page
-    const referrer = document.referrer;
-    const isValidReferrer = referrer.includes('task' + (taskNumber - 1)) || 
-                           referrer.includes('index.html') || 
-                           referrer.includes(window.location.origin);
-    
-    if (!isValidReferrer && !sessionStorage.getItem('validAccess_' + taskNumber)) {
-        alert('🚫 Access Denied: Please follow the proper sequence by scanning QR codes!');
-        window.location.href = 'index.html';
-        return false;
-    }
-    return true;
-}
-
-// 🔒 SECURITY: Set valid access token when task is properly completed
-function setValidAccess(taskNumber) {
-    sessionStorage.setItem('validAccess_' + (taskNumber + 1), 'true');
+// 🔒 SEQUENCE LOCK: Show sequence error
+function showSequenceError(taskNumber) {
+    const previousTask = taskNumber - 1;
+    alert(`🚫 SEQUENCE ERROR!\n\nYou must complete Task ${previousTask} first before accessing Task ${taskNumber}.\n\nPlease follow the proper order!`);
 }
 
 // Initialize on page load
