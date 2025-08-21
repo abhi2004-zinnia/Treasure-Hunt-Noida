@@ -1,16 +1,11 @@
 // 🔥 Firebase-Enabled Treasure Hunt Game
 // This version enables real-time multi-device data sharing
 
-// 🚨 YOUR ACTUAL FIREBASE CONFIG (CONVERTED TO COMPAT FORMAT)
-const firebaseConfig = {
-    apiKey: "AIzaSyCGBdKXReYuNx25H9QzqyLSJxUQCLCtr-c",
-    authDomain: "treasure-60c3a.firebaseapp.com",
-    projectId: "treasure-60c3a",
-    storageBucket: "treasure-60c3a.firebasestorage.app",
-    messagingSenderId: "323583642206",
-    appId: "1:323583642206:web:e23e84034b576b170f42cf",
-    measurementId: "G-FRPXMR0YH6"
-};
+// Initialize Firebase with config from firebase-config.js
+const firebaseConfig = window.FIREBASE_CONFIG;
+if (!firebaseConfig) {
+    console.error('Firebase configuration not found! Please create firebase-config.js from the sample file.');
+}
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);

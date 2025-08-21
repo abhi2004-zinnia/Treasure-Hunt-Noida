@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task 5 - WINNER!</title>
+    <title>Task 5 - Treasure Hunt</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     
-    <!-- 🔥 Firebase SDK - ADD THESE 3 LINES -->
+    <!-- 🔥 Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="firebase-config.js"></script>
 </head>
 <body>
     <div class="container">
@@ -79,7 +82,7 @@
         </div>
     </div>
     
-    <!-- 🔥 CHANGED: Use firebase-script.js instead of script.js -->
+    <!-- Firebase Scripts -->
     <script src="firebase-script.js"></script>
     <script>
         function getURLParameter(name) {

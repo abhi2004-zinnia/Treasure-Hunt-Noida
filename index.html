@@ -6,6 +6,15 @@
     <title>Office Treasure Hunt</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 🔥 Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="firebase-config.js"></script>
+    <script src="firebase-script.js"></script>
 </head>
 <body>
     <div class="container">
@@ -18,15 +27,15 @@
                     <h3>👥 For Teams</h3>
                     <p>Scan the QR codes to start your treasure hunt journey!</p>
                     <div class="team-setup">
-                        <input type="text" id="teamId" maxlength="10">
-                        <button onclick="setTeamId()">Start Hunt</button>
+                        <input type="text" id="teamId" maxlength="10" placeholder="Enter Team ID">
+                        <button onclick="startHunt()">Start Hunt</button>
                     </div>
                 </div>
                 
                 <div class="option-card">
                     <h3>🎮 For Admin</h3>
                     <p>Monitor team progress and view the leaderboard</p>
-                    <button onclick="goToAdmin()">Admin Dashboard</button>
+                    <button onclick="window.location.href='admin.html'">Admin Dashboard</button>
                 </div>
             </div>
         </div>
@@ -37,11 +46,23 @@
                 <li>🔍 Scan QR codes in sequence</li>
                 <li>📝 Read each clue carefully</li>
                 <li>🔢 Submit the previous task code to proceed</li>
-                <li>⚡ Complete all 4 tasks to win!</li>
+                <li>⚡ Complete all tasks to win!</li>
             </ul>
         </div>
     </div>
     
-    <script src="script.js"></script>
+    <script>
+        async function startHunt() {
+            const teamId = document.getElementById('teamId').value.trim().toUpperCase();
+            if (!teamId) {
+                alert('Please enter your Team ID');
+                return;
+            }
+            
+            if (await firebaseGame.setTeamId(teamId)) {
+                window.location.href = 'task1.html';
+            }
+        }
+    </script>
 </body>
 </html> 
