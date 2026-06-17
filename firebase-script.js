@@ -2,10 +2,15 @@
 // This version enables real-time multi-device data sharing
 
 // Initialize Firebase with config from firebase-config.js
-const firebaseConfig = window.FIREBASE_CONFIG;
-if (!firebaseConfig) {
-    console.error('Firebase configuration not found! Please create firebase-config.js from the sample file.');
-}
+const firebaseConfig = {
+    apiKey: "AIzaSyBIQOS2BBchpiZK6uCB6rzb5ISxUwgJpVM",
+    authDomain: "tresure-hunt--26.firebaseapp.com",
+    projectId: "tresure-hunt--26",
+    storageBucket: "tresure-hunt--26.firebasestorage.app",
+    messagingSenderId: "941895978375",
+    appId: "1:941895978375:web:806547f15b54690e1bd722",
+    measurementId: "G-S74MJ8F9V2"
+};
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
