@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Task 1 - Treasure Hunt</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Task 1 - Pride Treasure Hunt</title>
+    <link rel="stylesheet" href="style.css?v=4">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     
     <!-- 🔥 Firebase SDK -->
@@ -18,7 +18,7 @@
 <body>
     <div class="container">
         <div class="task-header">
-            <h1>🔍 Task 1 - Welcome!</h1>
+            <h1><span class="rainbow-icon" aria-hidden="true"></span> Task 1 - Welcome!</h1>
             <div class="progress-bar">
                 <div class="progress" style="width: 25%;"></div>
             </div>
@@ -142,123 +142,5 @@
             }
         };
     </script>
-    
-    <style>
-        .team-setup-section {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 30px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            text-align: center;
-        }
-        
-        .setup-box {
-            max-width: 400px;
-            margin: 0 auto;
-        }
-        
-        .team-input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin: 20px 0;
-        }
-        
-        .team-input-group input {
-            padding: 15px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
-            font-size: 16px;
-            text-align: center;
-            text-transform: uppercase;
-        }
-        
-        .team-input-group input:focus {
-            border-color: #667eea;
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-        }
-        
-        .team-input-group button {
-            background: linear-gradient(145deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s ease;
-        }
-        
-        .team-input-group button:hover {
-            transform: translateY(-2px);
-        }
-        
-        .help-text {
-            color: #666;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-        
-        .team-welcome {
-            background: linear-gradient(145deg, #e6fffa, #b2f5ea);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 30px;
-            text-align: center;
-            border: 2px solid #38b2ac;
-        }
-        
-        .team-welcome h2 {
-            color: #2c7a7b;
-            margin-bottom: 10px;
-        }
-        
-        .team-welcome p {
-            color: #2d3748;
-            margin: 0;
-        }
-        
-        /* 🔥 Firebase status indicator */
-        .firebase-status {
-            background: linear-gradient(145deg, #e6fffa, #b2f5ea);
-            border-radius: 10px;
-            padding: 15px;
-            margin: 15px 0;
-            text-align: center;
-            border: 2px solid #38b2ac;
-        }
-        
-        #connectionStatus {
-            color: #2c7a7b;
-            font-weight: 600;
-            margin: 0;
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-        
-        .game-content {
-            animation: fadeIn 0.5s ease-in;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        @media (max-width: 768px) {
-            .team-setup-section {
-                padding: 20px;
-                margin: 15px;
-            }
-        }
-    </style>
 </body>
 </html> 
