@@ -1,0 +1,18 @@
+{
+  "name": "treasure-hunt-noida",
+  "private": true,
+  "description": "Interactive office treasure hunt (Hindi clues, Firebase, QR tasks) — Treasure Hunt Noida",
+  "author": "Abhishek",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abhi2004-zinnia/Treasure-Hunt-Noida.git"
+  },
+  "bugs": {
+    "url": "https://github.com/abhi2004-zinnia/Treasure-Hunt-Noida/issues"
+  },
+  "homepage": "https://github.com/abhi2004-zinnia/Treasure-Hunt-Noida#readme",
+  "scripts": {
+    "serve": "npx --yes serve . -p 3000"
+  }
+}

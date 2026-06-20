@@ -1,8 +1,11 @@
-// 🔥 Firebase-Enabled Treasure Hunt Game
-// This version enables real-time multi-device data sharing
-
-// Initialize Firebase with config from firebase-config.js
-const firebaseConfig = {
+/**
+ * Treasure Hunt Noida — Firebase-enabled static site
+ * Owner & maintainer: Abhishek
+ * Repository: https://github.com/abhi2004-zinnia/Treasure-Hunt-Noida
+ *
+ * Optional `firebase-config.js` may set `window.FIREBASE_CONFIG` to override the defaults below.
+ */
+const DEFAULT_FIREBASE_CONFIG = {
     apiKey: "AIzaSyBIQOS2BBchpiZK6uCB6rzb5ISxUwgJpVM",
     authDomain: "tresure-hunt--26.firebaseapp.com",
     projectId: "tresure-hunt--26",
@@ -11,6 +14,16 @@ const firebaseConfig = {
     appId: "1:941895978375:web:806547f15b54690e1bd722",
     measurementId: "G-S74MJ8F9V2"
 };
+
+function resolveFirebaseConfig() {
+    const w = typeof window !== 'undefined' ? window.FIREBASE_CONFIG : null;
+    if (w && w.apiKey && w.projectId && String(w.apiKey).indexOf('YOUR_') !== 0) {
+        return Object.assign({}, DEFAULT_FIREBASE_CONFIG, w);
+    }
+    return DEFAULT_FIREBASE_CONFIG;
+}
+
+const firebaseConfig = resolveFirebaseConfig();
 
 // Initialize Firebase
 firebase.initializeApp(firebaseConfig);
@@ -914,7 +927,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-console.log('🔥 Firebase Treasure Hunt Game Initialized');
+console.log('🔥 Treasure Hunt Noida — Firebase initialized (maintainer: Abhishek)');
 
 // Export for global access
 window.firebaseGame = firebaseGame;

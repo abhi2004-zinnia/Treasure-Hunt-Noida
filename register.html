@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Team Registration — Pride Treasure Hunt</title>
+    <meta name="author" content="Abhishek">
+    <title>Team Registration — Treasure Hunt Noida</title>
     <link rel="stylesheet" href="style.css?v=4">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
@@ -26,7 +27,7 @@
                     We would love to see you at a future event—please stay in touch with your organizers for the next
                     opportunity.
                 </p>
-                <p class="registration-muted">Wishing you a wonderful day filled with pride and community.</p>
+                <p class="registration-muted">Wishing you a wonderful day — we hope to see you at the next event.</p>
                 <button type="button" class="btn-secondary" onclick="window.location.href='index.html'">Return home</button>
             </div>
         </div>
@@ -35,7 +36,7 @@
             <div class="hero-section">
                 <h1><span class="pride-flag" aria-hidden="true"></span> Team registration</h1>
                 <p class="registration-intro">
-                    Register your team for the Pride Treasure Hunt. The first <strong id="maxSlotsLabel">5</strong> teams to complete this form secure a spot.
+                    Register your team for Treasure Hunt Noida. The first <strong id="maxSlotsLabel">5</strong> teams to complete this form secure a spot.
                     Each team may have <strong>one leader</strong> and up to <strong>four</strong> additional members
                     (<strong>five people total</strong>, including the leader).
                 </p>
@@ -89,6 +90,10 @@
             </div>
         </div>
     </div>
+
+    <footer class="site-footer">
+        <p>Treasure Hunt Noida — <a href="https://github.com/abhi2004-zinnia/Treasure-Hunt-Noida" target="_blank" rel="noopener noreferrer">Source on GitHub</a> · Maintainer: Abhishek</p>
+    </footer>
 
     <script>
         document.getElementById('maxSlotsLabel').textContent = String(typeof TREASURE_HUNT_MAX_REGISTERED_TEAMS !== 'undefined' ? TREASURE_HUNT_MAX_REGISTERED_TEAMS : 5);

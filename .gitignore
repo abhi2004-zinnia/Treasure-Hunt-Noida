@@ -1,35 +1,112 @@
-# Firebase configuration
-firebase-config.js
-
-# Environment files
+# =============================================================================
+# Secrets & local credentials (never commit)
+# =============================================================================
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+**/serviceAccount*.json
+*-credentials.json
+credentials.json
+google-services.json
+GoogleService-Info.plist
 
-# IDE files
+# Optional local Firebase override (real keys) — use firebase-config.js stub in repo instead
+firebase-config.local.js
+firebase-config.secret.js
+
+# =============================================================================
+# Firebase CLI / emulator (if you add Firebase Hosting later)
+# =============================================================================
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.dataconnect/
+
+# =============================================================================
+# Environment & local config
+# =============================================================================
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.local
+
+# =============================================================================
+# Generated / runtime artifacts
+# =============================================================================
+qr_codes/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# =============================================================================
+# Dependencies & package manager
+# =============================================================================
+node_modules/
+
+# =============================================================================
+# Python
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+ENV/
+pip-log.txt
+pip-delete-this-directory.txt
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+coverage.xml
+*.egg-info/
+.eggs/
+dist/
+build/
+*.egg
+
+# =============================================================================
+# IDE & editors
+# =============================================================================
 .vscode/
 .idea/
 *.sublime-project
 *.sublime-workspace
+.vs/
+*.swp
+*.swo
+*~
 
+# =============================================================================
 # OS files
+# =============================================================================
 .DS_Store
+.AppleDouble
+.LSOverride
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# Python
-__pycache__/
-*.py[cod]
-*$py.class
-venv/
-env/
-
-# Node
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Build outputs
-dist/
-build/
-*.log 
+# =============================================================================
+# Misc
+# =============================================================================
+.cache/
+tmp/
+temp/
+.turbo/

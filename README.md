@@ -1,8 +1,8 @@
-# 🎯 Office Treasure Hunt Game
+# Treasure Hunt Noida
 
-A fun and interactive treasure hunt game that uses QR codes to create an engaging office-wide adventure! Perfect for team building events, office parties, or just adding some excitement to the workday.
+A fun, interactive office treasure hunt that uses QR codes for an engaging team adventure — Hindi clues, real-time progress, and an admin dashboard. **Owner & maintainer:** [Abhishek](https://github.com/abhi2004-zinnia). **Repository:** [github.com/abhi2004-zinnia/Treasure-Hunt-Noida](https://github.com/abhi2004-zinnia/Treasure-Hunt-Noida).
 
-## 🌟 Features
+## Features
 
 - QR code-based clue system
 - Real-time progress tracking
@@ -23,7 +23,7 @@ A fun and interactive treasure hunt game that uses QR codes to create an engagin
 
 When a team is **first created** in Firestore, the browser generates four random 6-character codes (plus a fixed `WINNER` label for the final step). Those values are stored on the team document under **`taskOutputCodes`**. Task pages load the code to display and verify from Firestore, not from fixed HTML.
 
-**Why browser generation (what we implemented):** this repo is a static site with no backend. It keeps deployment simple and matches your current GitHub Pages style hosting.
+**Why browser generation (what we implemented):** this repo is a static site with no backend. It keeps deployment simple and matches GitHub Pages–style hosting.
 
 **Stronger option — Cloud Functions:** codes generated in a Callable/HTTPS Cloud Function (or Admin SDK on create) are not derivable from client logic and are easier to pair with strict Firestore rules. Use that if you need stronger anti-tamper guarantees; you would create the team document (or `taskOutputCodes` field) only from the server.
 
@@ -31,89 +31,81 @@ When a team is **first created** in Firestore, the browser generates four random
 
 **Firestore rules:** if every client can read all `teams` documents, motivated players could read other teams’ codes. Prefer rules that only allow a team to read its own document (usually requires Firebase Auth with a custom claim or a signed token pattern).
 
-## 🚀 Quick Start
+## Quick start
 
 1. Clone this repository
+
 ```bash
-git clone https://github.com/yourusername/treasure-hunt-game.git
-cd treasure-hunt-game
+git clone https://github.com/abhi2004-zinnia/Treasure-Hunt-Noida.git
+cd Treasure-Hunt-Noida
 ```
 
-2. Set up Firebase (full walkthrough: **[SETUP.md](SETUP.md)**)
+2. Serve locally over HTTP (needed for Firebase and crypto APIs in some browsers), then open `http://localhost:3000/index.html`:
+
+```bash
+npm run serve
+```
+
+Or use any static server (e.g. VS Code Live Server). Firebase defaults are in **`firebase-script.js`**; optional overrides go in **`firebase-config.js`** (see comments in that file and **[SETUP.md](SETUP.md)**).
+
+3. Set up your own Firebase project when you are ready for production (full walkthrough: **[SETUP.md](SETUP.md)**)
    - Create a new Firebase project at [Firebase Console](https://console.firebase.google.com)
    - Enable Firestore Database and publish rules that allow `teams`, `submissions`, `registeredTeams`, and `meta/registrationGate`
-   - Copy `firebase-config.sample.js` to `firebase-config.js` and fill in values; **also** paste the same config into `firebase-script.js` (see SETUP.md)
+   - Paste your config into **`firebase-config.js`** (uncomment `window.FIREBASE_CONFIG`) or edit the defaults in `firebase-script.js` for a fork
 
-3. Configure Firebase Security (Important!)
-   - In Firebase Console, go to Project Settings
-   - Find your Web API Key
-   - Under "API Restrictions", restrict the key to your domains
-   - Set up Firestore Rules to secure your data
+4. Configure Firebase security (important)
+   - In Firebase Console → Project Settings → your Web API Key → restrict the key to your domains
+   - Set up Firestore rules appropriate for your event
 
-4. Customize Clues
-   - Edit the clue text in `task1.html` through `task5.html`
-   - Update the clues in `firebase-script.js` if needed
-   - Generate new QR codes using `generate_qr_codes.py`
+5. Customize clues
+   - Edit clue text in `task1.html` through `task5.html`
+   - Update clues in `firebase-script.js` if needed
+   - Regenerate QR codes using `generate_qr_codes.py` (set `TREASURE_HUNT_BASE_URL` to your live site URL)
 
-5. Generate QR Codes
+6. Generate QR codes
+
 ```bash
 pip install -r requirements.txt
 python generate_qr_codes.py
 ```
 
-6. Deploy & Play!
-   - Host the files on your web server
+7. Deploy and play
+   - Host all HTML, CSS, and JS on your web server or [GitHub Pages](https://pages.github.com/)
    - Print and place the QR codes
    - Share the start URL with participants
    - Monitor progress at `/admin.html`
 
-## 🔒 Security Considerations
+## Security considerations
 
-1. **Firebase Configuration**
-   - Never commit `firebase-config.js` to version control
-   - Use `firebase-config.sample.js` as a template
-   - Restrict your Firebase API key to your domains
+1. **Firebase configuration** — Client keys are public by design; protect data with **Firestore rules** and API key restrictions. Do not put service account JSON in this repo.
+2. **Firestore rules** — Implement authentication or scoped rules as soon as you move beyond a trusted internal test.
 
-2. **Firestore Rules**
-   - Implement proper authentication if needed
-   - Restrict read/write access appropriately
-   - Example rules:
-   ```javascript
-   rules_version = '2';
-   service cloud.firestore {
-     match /databases/{database}/documents {
-       match /{document=**} {
-         allow read, write: if request.auth != null;
-         // Or for public access with rate limiting:
-         // allow read, write: if true;
-       }
-     }
-   }
-   ```
+## Customization
 
-## 🛠️ Customization
+### Modifying clues
 
-### Modifying Clues
 1. Edit the HTML files (`task1.html` - `task5.html`)
 2. Update clue text in `firebase-script.js`
 3. Regenerate QR codes if URLs change
 
-### Adding/Removing Tasks
+### Adding/removing tasks
+
 1. Adjust `taskOutputCodes` handling and task HTML files in `firebase-script.js`
 2. Create/delete corresponding HTML files
 3. Update the QR code generation script
 
 ### Task output codes
+
 Per-team codes are generated in **`firebase-script.js`** (`createNewTaskOutputCodes`, `ensureTaskOutputCodes`). Clues remain global in `this.clues`; only the numeric codes differ per team.
 
-## 📝 Contributing
+## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
+Contributions are welcome. Please open a pull request on [Treasure-Hunt-Noida](https://github.com/abhi2004-zinnia/Treasure-Hunt-Noida). For major changes, open an issue first.
 
-## 📄 License
+## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file. Copyright Abhishek (see LICENSE for years).
 
-## 🐛 Issues
+## Issues
 
-Found a bug or have a suggestion? Please open an issue on GitHub! 
+Found a bug or have a suggestion? [Open an issue](https://github.com/abhi2004-zinnia/Treasure-Hunt-Noida/issues).

@@ -1,4 +1,5 @@
-// Copy to firebase-config.js and fill with your own Firebase project values
+// Treasure Hunt Noida — sample Firebase config (owner: Abhishek)
+// Copy to firebase-config.js, fill with your Firebase project values, and keep that file out of public repos if you prefer.
 window.FIREBASE_CONFIG = {
   apiKey: "YOUR_API_KEY",
   authDomain: "YOUR_PROJECT.firebaseapp.com",

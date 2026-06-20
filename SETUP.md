@@ -1,5 +1,7 @@
 # Firebase and hosting setup
 
+**Project:** [Treasure Hunt Noida](https://github.com/abhi2004-zinnia/Treasure-Hunt-Noida) — owner & maintainer: **Abhishek**.
+
 This guide walks through creating a new Firebase project, wiring the web app config, enabling Firestore with usable rules, and hosting the static site so the treasure hunt (registration, gameplay, and admin) works end to end.
 
 For game rules and customization, see [README.md](README.md).
@@ -39,7 +41,7 @@ const firebaseConfig = {
 ### Where to paste it in *this* repository
 
 - **`firebase-script.js`** — Replace the existing `firebaseConfig` object at the top of the file with your new values. The app calls `firebase.initializeApp(firebaseConfig)` from this file.
-- **`firebase-config.js`** (optional but recommended) — Copy `firebase-config.sample.js` to `firebase-config.js` and fill in the same values. Several HTML pages load `firebase-config.js` before `firebase-script.js`; having a real file avoids 404s. If you later refactor so only `firebase-config.js` holds config, remove the duplicate from `firebase-script.js` and read `window.FIREBASE_CONFIG` once—until then, **keep `firebase-script.js` in sync** with the project you intend to use.
+- **`firebase-config.js`** (optional) — Copy `firebase-config.sample.js` to `firebase-config.js` and fill in your values. Pages load this script before `firebase-script.js`. If the file is missing or still contains placeholders, **`firebase-script.js` uses its built-in default config** so the clone still runs; when you add a real `firebase-config.js`, it overrides those defaults via `window.FIREBASE_CONFIG`.
 
 Do **not** commit real production keys to a public repo if you care about abuse; use private repos, environment-specific branches, or inject config at deploy time.
 
@@ -124,12 +126,12 @@ Deploy **all** HTML, CSS, and JS files together, including:
 - `index.html`, `register.html`, `admin.html`
 - `task1.html` … `task5.html`
 - `firebase-script.js`, `style.css`
-- `firebase-config.js` (your filled copy, not only the sample)
+- `firebase-config.js` (comments-only stub is committed so pages do not 404; add your keys there or rely on `firebase-script.js` defaults)
 
 Examples:
 
 - [Firebase Hosting](https://firebase.google.com/docs/hosting/quickstart)
-- [GitHub Pages](https://pages.github.com/)
+- [GitHub Pages](https://pages.github.com/) — for this repo, the site URL is typically `https://abhi2004-zinnia.github.io/Treasure-Hunt-Noida/` after you enable Pages on the `main` branch (use that value for `TREASURE_HUNT_BASE_URL` when generating QR codes).
 - Any static file host (S3 + CloudFront, Netlify, Azure Static Web Apps, etc.)
 
 Ensure **HTTPS** is used in production (`crypto.getRandomValues` for codes expects a secure context in most browsers).
@@ -179,6 +181,7 @@ Ensure **HTTPS** is used in production (`crypto.getRandomValues` for codes expec
 | File | Role |
 |------|------|
 | `firebase-script.js` | Firebase init, game logic, registration transaction, admin helpers. |
-| `firebase-config.sample.js` | Template for `firebase-config.js`. |
+| `firebase-config.js` | Optional overrides via `window.FIREBASE_CONFIG`; defaults ship in `firebase-script.js`. |
+| `firebase-config.sample.js` | Placeholder template when writing a custom `firebase-config.js`. |
 | `register.html` | Public registration (five teams cap). |
 | `admin.html` | Roster + leaderboard (clears `teams`, `submissions`, `registeredTeams`, resets gate). |
