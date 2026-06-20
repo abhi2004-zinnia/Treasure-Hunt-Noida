@@ -25,9 +25,11 @@
             <div class="options">
                 <div class="option-card">
                     <h3>👥 For Teams</h3>
-                    <p>Scan the QR codes to start your treasure hunt journey!</p>
+                    <p><strong>New teams:</strong> register first using the link below (only the first five teams can join).</p>
+                    <p style="margin: 12px 0;"><a href="register.html" class="btn-register-link">Register your team</a></p>
+                    <p style="margin-top: 16px;">Already registered? Enter your <strong>exact Team ID</strong> (same as at registration), then start the hunt.</p>
                     <div class="team-setup">
-                        <input type="text" id="teamId" maxlength="10" placeholder="Enter Team ID">
+                        <input type="text" id="teamId" maxlength="40" placeholder="Team ID (letters &amp; numbers)">
                         <button onclick="startHunt()">Start Hunt</button>
                     </div>
                 </div>
@@ -53,9 +55,9 @@
     
     <script>
         async function startHunt() {
-            const teamId = document.getElementById('teamId').value.trim().toUpperCase();
-            if (!teamId) {
-                alert('Please enter your Team ID');
+            const teamId = sanitizeTeamIdForRegistration(document.getElementById('teamId').value);
+            if (!teamId || teamId.length < 2) {
+                alert('Please enter your Team ID (at least 2 letters or numbers, the same as when you registered).');
                 return;
             }
             

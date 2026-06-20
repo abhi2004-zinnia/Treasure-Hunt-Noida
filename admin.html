@@ -32,6 +32,10 @@
         
         <div class="stats-grid">
             <div class="stat-card">
+                <div class="stat-value" id="registrationSlots">0/5</div>
+                <div class="stat-label">Registration slots</div>
+            </div>
+            <div class="stat-card">
                 <div class="stat-value" id="totalTeams">0</div>
                 <div class="stat-label">Total Teams</div>
             </div>
@@ -44,6 +48,25 @@
                 <div class="stat-label">In Progress</div>
             </div>
         </div>
+        
+        <h2><span class="pride-flag pride-flag-sm" aria-hidden="true"></span> Registered teams</h2>
+        <p class="admin-subtitle" id="registrationIntro">Teams that completed the registration form (leader and members).</p>
+        <table class="leaderboard-table registration-roster">
+            <thead>
+                <tr>
+                    <th>Slot</th>
+                    <th>Team ID</th>
+                    <th>Leader</th>
+                    <th>Other members</th>
+                    <th>People</th>
+                </tr>
+            </thead>
+            <tbody id="registrationRosterBody">
+                <tr>
+                    <td colspan="5" class="no-data">Loading…</td>
+                </tr>
+            </tbody>
+        </table>
         
         <h2><span class="pride-flag pride-flag-sm" aria-hidden="true"></span> Live Leaderboard</h2>
         <table class="leaderboard-table">
@@ -72,7 +95,6 @@
         </div>
     </div>
     
-    <script src="firebase-script.js"></script>
     <script>
         function updateFirebaseStatus(connected) {
             const statusElement = document.getElementById('firebase-status');
@@ -112,14 +134,47 @@
             window.location.href = 'index.html';
         }
         
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+        
+        function updateRegistrationRoster(rows) {
+            const body = document.getElementById('registrationRosterBody');
+            const max = typeof TREASURE_HUNT_MAX_REGISTERED_TEAMS !== 'undefined' ? TREASURE_HUNT_MAX_REGISTERED_TEAMS : 5;
+            const slotsEl = document.getElementById('registrationSlots');
+            if (slotsEl) {
+                slotsEl.textContent = rows.length + '/' + max;
+            }
+            if (!body) return;
+            if (!rows.length) {
+                body.innerHTML = '<tr><td colspan="5" class="no-data">No teams have registered yet</td></tr>';
+                return;
+            }
+            let html = '';
+            rows.forEach(row => {
+                const members = Array.isArray(row.memberNames) ? row.memberNames : [];
+                const membersStr = members.length ? escapeHtml(members.join(', ')) : '—';
+                html += '<tr>' +
+                    '<td>' + escapeHtml(row.registrationSlot) + '</td>' +
+                    '<td><strong>' + escapeHtml(row.id || row._docId) + '</strong></td>' +
+                    '<td>' + escapeHtml(row.leaderName) + '</td>' +
+                    '<td>' + membersStr + '</td>' +
+                    '<td>' + escapeHtml(row.peopleCount != null ? row.peopleCount : (1 + members.length)) + '</td>' +
+                    '</tr>';
+            });
+            body.innerHTML = html;
+        }
+        
         window.onload = function() {
             updateFirebaseStatus(false);
             refreshData();
-            
-            firebaseGame.listenToTeamUpdates(teams => {
-                updateFirebaseStatus(true);
-                updateLeaderboard(teams);
-                updateStatistics(teams);
+            firebaseGame.listenToRegisteredTeams(rows => {
+                updateRegistrationRoster(rows);
             });
         };
     </script>

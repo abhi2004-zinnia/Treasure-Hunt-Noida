@@ -809,6 +809,123 @@ table tr:hover, .leaderboard-table tr:hover {
 .container > * { animation: fadeIn 0.6s ease-out; }
 .game-content { animation: fadeIn 0.5s ease-in; }
 
+/* Registration page */
+.registration-card {
+    max-width: 560px;
+    margin: 0 auto 24px;
+    text-align: left;
+}
+
+.registration-intro,
+.registration-slots {
+    color: var(--text-on-dark);
+    max-width: 640px;
+    margin: 12px auto 0;
+    text-align: center;
+}
+
+.registration-slots {
+    font-weight: 600;
+    opacity: 0.95;
+}
+
+.registration-form .form-group {
+    margin-bottom: 14px;
+}
+
+.registration-form label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-on-dark);
+}
+
+.registration-form input[type="text"] {
+    width: 100%;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--border-light);
+    font-family: inherit;
+    color: var(--text-primary);
+}
+
+.registration-members-heading {
+    margin: 18px 0 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.form-error {
+    color: #ffdede;
+    background: rgba(120, 0, 40, 0.35);
+    padding: 10px 12px;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+}
+
+.btn-primary-wide {
+    width: 100%;
+    margin-top: 8px;
+    padding: 14px 20px;
+    font-size: 1rem;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--text-on-dark);
+    background: var(--btn-primary);
+    background-size: 200% 200%;
+}
+
+.btn-register-link {
+    display: inline-block;
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--text-on-dark);
+    background: var(--btn-primary);
+    background-size: 200% 200%;
+}
+
+.registration-late-card,
+.registration-success-card {
+    max-width: 640px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.registration-late-card h1,
+.registration-success-card h2 {
+    text-align: center;
+}
+
+.registration-late-lead {
+    font-size: 1.1rem;
+    margin: 16px 0;
+}
+
+.registration-muted {
+    margin-top: 20px;
+    font-style: italic;
+    opacity: 0.9;
+}
+
+.registration-after {
+    margin-top: 16px;
+}
+
+.admin-subtitle {
+    color: var(--text-on-dark);
+    opacity: 0.9;
+    margin-bottom: 12px;
+}
+
+.registration-roster {
+    margin-bottom: 32px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .container { padding: 15px; }

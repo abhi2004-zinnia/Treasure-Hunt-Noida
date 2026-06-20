@@ -9,7 +9,27 @@ A fun and interactive treasure hunt game that uses QR codes to create an engagin
 - Admin dashboard for monitoring teams
 - Multi-team support
 - Customizable clues and locations
-- Firebase-powered for real-time updates
+- **Per-team task codes** — each team gets its own random codes (stored in Firestore as `taskOutputCodes`); teams cannot reuse another team’s codes.
+- **Capped registration** — share `register.html`; the first five teams to register get spots; the admin dashboard lists roster and live progress.
+
+## Team registration (`register.html`)
+
+- Share **`register.html`** (full URL on your host) with teams. The **first five** successful submissions are accepted; a sixth visitor sees a polite “spots are full” message.
+- Each team enters a **team name** (stored as letters/numbers only), **leader** name, and up to **four** other members (five people including the leader).
+- Registration writes to **`registeredTeams/{teamId}`** and **`teams/{teamId}`** in one transaction, and increments **`meta/registrationGate.count`**.
+- **Firestore rules** must allow clients to read/write these paths (or use Cloud Functions for production). Without rules updates, registration may fail if your database is locked down.
+
+## Per-team codes (how it works)
+
+When a team is **first created** in Firestore, the browser generates four random 6-character codes (plus a fixed `WINNER` label for the final step). Those values are stored on the team document under **`taskOutputCodes`**. Task pages load the code to display and verify from Firestore, not from fixed HTML.
+
+**Why browser generation (what we implemented):** this repo is a static site with no backend. It keeps deployment simple and matches your current GitHub Pages style hosting.
+
+**Stronger option — Cloud Functions:** codes generated in a Callable/HTTPS Cloud Function (or Admin SDK on create) are not derivable from client logic and are easier to pair with strict Firestore rules. Use that if you need stronger anti-tamper guarantees; you would create the team document (or `taskOutputCodes` field) only from the server.
+
+**Migration:** teams that **already have progress** (`completedTasks >= 1`) but no `taskOutputCodes` field receive the **legacy** global codes (`TC441`, …) once so in-flight hunts are not broken. New teams never use those legacy values.
+
+**Firestore rules:** if every client can read all `teams` documents, motivated players could read other teams’ codes. Prefer rules that only allow a team to read its own document (usually requires Firebase Auth with a custom claim or a signed token pattern).
 
 ## 🚀 Quick Start
 
@@ -19,11 +39,10 @@ git clone https://github.com/yourusername/treasure-hunt-game.git
 cd treasure-hunt-game
 ```
 
-2. Set up Firebase
+2. Set up Firebase (full walkthrough: **[SETUP.md](SETUP.md)**)
    - Create a new Firebase project at [Firebase Console](https://console.firebase.google.com)
-   - Enable Firestore Database
-   - Copy `firebase-config.sample.js` to `firebase-config.js`
-   - Fill in your Firebase configuration values
+   - Enable Firestore Database and publish rules that allow `teams`, `submissions`, `registeredTeams`, and `meta/registrationGate`
+   - Copy `firebase-config.sample.js` to `firebase-config.js` and fill in values; **also** paste the same config into `firebase-script.js` (see SETUP.md)
 
 3. Configure Firebase Security (Important!)
    - In Firebase Console, go to Project Settings
@@ -80,9 +99,12 @@ python generate_qr_codes.py
 3. Regenerate QR codes if URLs change
 
 ### Adding/Removing Tasks
-1. Modify the `taskCodes` object in `firebase-script.js`
+1. Adjust `taskOutputCodes` handling and task HTML files in `firebase-script.js`
 2. Create/delete corresponding HTML files
 3. Update the QR code generation script
+
+### Task output codes
+Per-team codes are generated in **`firebase-script.js`** (`createNewTaskOutputCodes`, `ensureTaskOutputCodes`). Clues remain global in `this.clues`; only the numeric codes differ per team.
 
 ## 📝 Contributing
 

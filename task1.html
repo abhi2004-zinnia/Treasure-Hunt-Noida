@@ -33,7 +33,7 @@
                     <input type="text" id="teamIdInput" maxlength="15">
                     <button onclick="setTeamIdTask1()" id="setTeamBtn">Start Task 1</button>
                 </div>
-                <p class="help-text">💡 Your Team ID was given to you by the organizer</p>
+                <p class="help-text">💡 Use the same Team ID you chose at <a href="register.html">registration</a>. Need a spot? Ask your organizer for the registration link.</p>
             </div>
         </div>
         
@@ -56,7 +56,7 @@
             
             <div class="task-code-section">
                 <h3>📝 Task Code to Remember:</h3>
-                <div class="task-code">TC441</div>
+                <div class="task-code" id="taskOutputCodeDisplay">…</div>
                 <p class="task-note">Remember this code! You'll need it for the next task.</p>
             </div>
             
@@ -81,28 +81,28 @@
         
         async function setTeamIdTask1() {
             const teamIdInput = document.getElementById('teamIdInput');
-            const teamId = teamIdInput.value.trim().toUpperCase();
+            const teamId = sanitizeTeamIdForRegistration(teamIdInput.value);
             
-            if (!teamId) {
-                alert('Please enter your Team ID');
+            if (!teamId || teamId.length < 2) {
+                alert('Please enter your Team ID (at least 2 letters or numbers, same as registration).');
                 return;
             }
             
             // 🔥 Firebase: Set team ID with real-time sync
             if (await firebaseGame.setTeamId(teamId)) {
-                showGameContent(teamId);
+                await showGameContent(teamId);
             }
         }
         
-        function showGameContent(teamId) {
+        async function showGameContent(teamId) {
             // Hide setup section and show game content
             document.getElementById('teamSetupSection').style.display = 'none';
             document.getElementById('gameContent').style.display = 'block';
             document.getElementById('currentTeamId').textContent = teamId;
             document.getElementById('teamDisplayName').textContent = teamId;
-            
+            await firebaseGame.populateTaskOutputCodeDisplay(teamId, 1);
             // 🔥 Firebase: Check task status in real-time
-            loadTaskStatus();
+            await loadTaskStatus();
         }
         
         async function loadTaskStatus() {
@@ -116,6 +116,7 @@
                 document.getElementById('completeBtn').disabled = true;
                 document.getElementById('completeBtn').style.opacity = '0.7';
             }
+            await firebaseGame.populateTaskOutputCodeDisplay(teamId, 1);
         }
         
         window.onload = async function() {
@@ -124,17 +125,21 @@
             const currentTeamId = firebaseGame.getCurrentTeamId();
             
             if (urlTeamId) {
-                // Team ID provided in URL - auto-set it
-                const teamIdUpper = urlTeamId.toUpperCase();
-                if (await firebaseGame.setTeamId(teamIdUpper)) {
-                    showGameContent(teamIdUpper);
+                const teamIdUpper = sanitizeTeamIdForRegistration(urlTeamId);
+                if (teamIdUpper.length >= 2 && await firebaseGame.setTeamId(teamIdUpper)) {
+                    await showGameContent(teamIdUpper);
                     return;
                 }
             }
             
             if (currentTeamId) {
-                // Team ID already set
-                showGameContent(currentTeamId);
+                const normalized = sanitizeTeamIdForRegistration(currentTeamId);
+                if (normalized.length >= 2) {
+                    await showGameContent(normalized);
+                } else {
+                    document.getElementById('teamSetupSection').style.display = 'block';
+                    document.getElementById('gameContent').style.display = 'none';
+                }
             } else {
                 // Show team setup section
                 document.getElementById('teamSetupSection').style.display = 'block';

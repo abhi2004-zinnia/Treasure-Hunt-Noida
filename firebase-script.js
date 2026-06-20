@@ -16,16 +16,67 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+/** Codes shown after each task (stored per team in Firestore as `taskOutputCodes`). */
+const LEGACY_TASK_OUTPUT_CODES = {
+    '1': 'TC441',
+    '2': 'TC242',
+    '3': 'TC803',
+    '4': 'TC200',
+    '5': 'WINNER'
+};
+
+const TASK_OUTPUT_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function generateRandomTaskOutputCode(length = 6) {
+    const bytes = new Uint8Array(length);
+    crypto.getRandomValues(bytes);
+    let s = '';
+    for (let i = 0; i < length; i++) {
+        s += TASK_OUTPUT_CODE_CHARS[bytes[i] % TASK_OUTPUT_CODE_CHARS.length];
+    }
+    return s;
+}
+
+/** New teams get unique output codes (browser-generated). Task 5 stays a shared WINNER label. */
+function createNewTaskOutputCodes() {
+    return {
+        '1': generateRandomTaskOutputCode(),
+        '2': generateRandomTaskOutputCode(),
+        '3': generateRandomTaskOutputCode(),
+        '4': generateRandomTaskOutputCode(),
+        '5': 'WINNER'
+    };
+}
+
+/** Max teams that can register for one event (first-come). */
+const MAX_REGISTERED_TEAMS = 5;
+/** Leader counts as one; up to four additional members (five people total). */
+const MAX_TEAM_MEMBERS_INCLUDING_LEADER = 5;
+
+function sanitizeTeamIdForRegistration(raw) {
+    if (!raw || typeof raw !== 'string') return '';
+    const cleaned = raw.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+    return cleaned.slice(0, 15);
+}
+
+function buildGameplayTeamDoc(teamId, leaderName, memberNamesArr) {
+    return {
+        id: teamId,
+        leaderName: leaderName.trim(),
+        memberNames: memberNamesArr,
+        peopleCount: 1 + memberNamesArr.length,
+        completedTasks: 0,
+        currentTask: 1,
+        startTime: firebase.firestore.FieldValue.serverTimestamp(),
+        completionTime: null,
+        taskHistory: [],
+        status: 'active',
+        taskOutputCodes: createNewTaskOutputCodes()
+    };
+}
+
 class FirebaseTreasureHunt {
     constructor() {
-        this.taskCodes = {
-            1: "TC441",
-            2: "TC242", 
-            3: "TC803",
-            4: "TC200",
-            5: "WINNER"
-        };
-        
         this.clues = {
             1: "गिनती में जो दिखे नहीं, पर उसके बिना कुछ भी चले नहीं। सोचो उस खोज के जनक को, और पहुँचो उसके नाम वाले ठिकाने को।",
             2: "ना कोई ऑफिस बिना इसके चलता है, और ना ही आगंतुक बिना यहाँ रुके निकलता है। वह जगह जहाँ मुस्कान से स्वागत होता है, वहीं अगला इशारा चुपचाप बैठा होता है।",
@@ -37,31 +88,221 @@ class FirebaseTreasureHunt {
         this.currentTeamId = null;
     }
 
+    /** How many team slots are already filled (0–MAX_REGISTERED_TEAMS). */
+    async getRegistrationSlotCount() {
+        try {
+            const snap = await db.collection('meta').doc('registrationGate').get();
+            if (!snap.exists) return 0;
+            return Math.min(MAX_REGISTERED_TEAMS, Math.max(0, snap.data().count || 0));
+        } catch (e) {
+            console.error('getRegistrationSlotCount:', e);
+            return 0;
+        }
+    }
+
+    async isRegistrationFull() {
+        const n = await this.getRegistrationSlotCount();
+        return n >= MAX_REGISTERED_TEAMS;
+    }
+
+    async getAllRegisteredTeams() {
+        try {
+            const snap = await db.collection('registeredTeams').orderBy('registrationSlot', 'asc').get();
+            const rows = [];
+            snap.forEach(doc => rows.push({ ...doc.data(), _docId: doc.id }));
+            return rows;
+        } catch (e) {
+            console.error('getAllRegisteredTeams:', e);
+            return [];
+        }
+    }
+
+    listenToRegisteredTeams(callback) {
+        return db.collection('registeredTeams')
+            .orderBy('registrationSlot', 'asc')
+            .onSnapshot(snap => {
+                const rows = [];
+                snap.forEach(doc => rows.push({ ...doc.data(), _docId: doc.id }));
+                callback(rows);
+            });
+    }
+
+    /**
+     * Atomic registration: first MAX_REGISTERED_TEAMS teams win a slot.
+     * @returns {{ ok: true, slot: number } | { ok: false, code: string, message: string }}
+     */
+    async registerTeamWithRoster(teamIdRaw, leaderNameRaw, memberNameInputs) {
+        const teamId = sanitizeTeamIdForRegistration(teamIdRaw);
+        const leaderName = (leaderNameRaw || '').trim();
+
+        if (teamId.length < 2) {
+            return { ok: false, code: 'INVALID_TEAM', message: 'Please choose a team name with at least 2 letters or numbers.' };
+        }
+        if (!leaderName) {
+            return { ok: false, code: 'INVALID_LEADER', message: 'Please enter the team leader’s name.' };
+        }
+
+        const memberNames = (memberNameInputs || [])
+            .map(s => (s || '').trim())
+            .filter(Boolean);
+        if (memberNames.length > MAX_TEAM_MEMBERS_INCLUDING_LEADER - 1) {
+            return {
+                ok: false,
+                code: 'TOO_MANY_MEMBERS',
+                message: `A team can have at most ${MAX_TEAM_MEMBERS_INCLUDING_LEADER} people including the leader (leader plus up to four other members).`
+            };
+        }
+
+        const gateRef = db.collection('meta').doc('registrationGate');
+        const regRef = db.collection('registeredTeams').doc(teamId);
+        const teamRef = db.collection('teams').doc(teamId);
+
+        let assignedSlot = 0;
+        try {
+            await db.runTransaction(async (tx) => {
+                const gateSnap = await tx.get(gateRef);
+                const count = gateSnap.exists ? Math.max(0, gateSnap.data().count || 0) : 0;
+                if (count >= MAX_REGISTERED_TEAMS) {
+                    throw Object.assign(new Error('REGISTRATION_FULL'), { code: 'REGISTRATION_FULL' });
+                }
+
+                const existingReg = await tx.get(regRef);
+                if (existingReg.exists) {
+                    throw Object.assign(new Error('DUPLICATE_TEAM'), { code: 'DUPLICATE_TEAM' });
+                }
+
+                const slot = count + 1;
+                assignedSlot = slot;
+                tx.set(
+                    gateRef,
+                    { count: count + 1, maxSlots: MAX_REGISTERED_TEAMS },
+                    { merge: true }
+                );
+
+                tx.set(regRef, {
+                    id: teamId,
+                    leaderName,
+                    memberNames,
+                    peopleCount: 1 + memberNames.length,
+                    registrationSlot: slot,
+                    registeredAt: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                tx.set(teamRef, buildGameplayTeamDoc(teamId, leaderName, memberNames));
+            });
+
+            return { ok: true, slot: assignedSlot };
+        } catch (err) {
+            if (err && err.code === 'REGISTRATION_FULL') {
+                return {
+                    ok: false,
+                    code: 'REGISTRATION_FULL',
+                    message: 'All team slots for this hunt are already filled. Thank you for your interest.'
+                };
+            }
+            if (err && err.code === 'DUPLICATE_TEAM') {
+                return {
+                    ok: false,
+                    code: 'DUPLICATE_TEAM',
+                    message: 'That team name is already registered. Please pick a different team name.'
+                };
+            }
+            console.error('registerTeamWithRoster:', err);
+            return {
+                ok: false,
+                code: 'UNKNOWN',
+                message: 'Something went wrong while saving your registration. Please try again in a moment.'
+            };
+        }
+    }
+
+    /** True if this team id has completed the registration flow. */
+    async isTeamRegistered(teamId) {
+        if (!teamId) return false;
+        const id = sanitizeTeamIdForRegistration(teamId);
+        try {
+            const snap = await db.collection('registeredTeams').doc(id).get();
+            return snap.exists;
+        } catch (e) {
+            console.error('isTeamRegistered:', e);
+            return false;
+        }
+    }
+
+    /**
+     * Ensures `taskOutputCodes` exists on the team doc.
+     * New hunts: random unique codes. Teams that already started under the old global codes: LEGACY_* migration.
+     */
+    async ensureTaskOutputCodes(teamId) {
+        const teamRef = db.collection('teams').doc(teamId);
+        const teamDoc = await teamRef.get();
+        if (!teamDoc.exists) return null;
+
+        const data = teamDoc.data();
+        const existing = data.taskOutputCodes;
+        if (existing && existing['1'] && existing['2'] && existing['3'] && existing['4']) {
+            return existing;
+        }
+
+        const completed = typeof data.completedTasks === 'number' ? data.completedTasks : 0;
+        const newCodes =
+            completed >= 1 ? { ...LEGACY_TASK_OUTPUT_CODES } : createNewTaskOutputCodes();
+
+        await teamRef.set({ taskOutputCodes: newCodes }, { merge: true });
+        return newCodes;
+    }
+
+    /** Code revealed after completing `completedTaskNumber` (used to unlock the next task page). */
+    async getCodeAfterCompletedTask(teamId, completedTaskNumber) {
+        await this.ensureTaskOutputCodes(teamId);
+        const progress = await this.getTeamProgress(teamId);
+        if (!progress || !progress.taskOutputCodes) return null;
+        const raw = progress.taskOutputCodes[String(completedTaskNumber)];
+        return raw != null ? String(raw).trim().toUpperCase() : null;
+    }
+
+    async populateTaskOutputCodeDisplay(teamId, completedTaskNumber) {
+        const el = document.getElementById('taskOutputCodeDisplay');
+        if (!el || !teamId) return;
+        const code = await this.getCodeAfterCompletedTask(teamId, completedTaskNumber);
+        el.textContent = code || '…';
+    }
+
     // 🔥 Firebase: Set team ID (creates team in Firestore if doesn't exist)
     async setTeamId(teamId) {
         if (!teamId || teamId.trim() === '') return false;
         
-        teamId = teamId.trim().toUpperCase();
+        teamId = sanitizeTeamIdForRegistration(teamId);
+        if (teamId.length < 2) {
+            alert('Please enter a valid team name (at least 2 letters or numbers, same as when you registered).');
+            return false;
+        }
         this.currentTeamId = teamId;
         
         try {
             // Check if team exists, if not create it
             const teamRef = db.collection('teams').doc(teamId);
             const teamDoc = await teamRef.get();
-            
+
             if (!teamDoc.exists) {
-                // Create new team automatically (no pre-registration needed)
-                await teamRef.set({
-                    id: teamId,
-                    completedTasks: 0,
-                    currentTask: 1,
-                    startTime: firebase.firestore.FieldValue.serverTimestamp(),
-                    completionTime: null,
-                    taskHistory: [],
-                    status: 'active'
-                });
-                console.log(`🔥 Team ${teamId} created in Firebase`);
+                const regSnap = await db.collection('registeredTeams').doc(teamId).get();
+                if (!regSnap.exists) {
+                    alert(
+                        `Team "${teamId}" is not registered for this hunt.\n\n` +
+                            'Please use the registration link from your organizer to sign up your team first. ' +
+                            'If your team already registered, check that you are using the exact same team name.'
+                    );
+                    this.currentTeamId = null;
+                    return false;
+                }
+                const r = regSnap.data();
+                const memberNames = Array.isArray(r.memberNames) ? r.memberNames : [];
+                const leaderName = (r.leaderName || '').trim() || 'Team lead';
+                await teamRef.set(buildGameplayTeamDoc(teamId, leaderName, memberNames));
+                console.log(`🔥 Team ${teamId} gameplay doc created from registration`);
             }
+
+            await this.ensureTaskOutputCodes(teamId);
             
             // Store current team in localStorage for session
             localStorage.setItem('currentTeamId', teamId);
@@ -77,57 +318,44 @@ class FirebaseTreasureHunt {
         return this.currentTeamId || localStorage.getItem('currentTeamId');
     }
 
-    // 🔥 Firebase: Verify task code against Firestore data
-    async verifyTaskCode(teamId, expectedCode, actualCode) {
+    /**
+     * @param {string} teamId
+     * @param {number} completedTaskNumber — task whose output code the player is entering (e.g. 1 for code after Task 1)
+     * @param {string} actualCode
+     */
+    async verifyTaskCode(teamId, completedTaskNumber, actualCode) {
         if (!teamId || !actualCode) return false;
-        
-        try {
-            const teamRef = db.collection('teams').doc(teamId);
-            const teamDoc = await teamRef.get();
-            
-            if (!teamDoc.exists) {
-                // Auto-create team if it doesn't exist
-                await this.setTeamId(teamId);
-                return false; // First time, need to complete previous tasks
-            }
-            
-            const teamData = teamDoc.data();
-            const currentTask = teamData.currentTask;
-            
-            // Check if this is the expected sequence
-            if (expectedCode !== this.taskCodes[currentTask - 1]) {
-                alert('Invalid sequence! Complete tasks in order.');
-                return false;
-            }
-            
-            if (actualCode.toUpperCase() !== expectedCode) {
-                alert('Incorrect task code! Try again.');
-                return false;
-            }
-            
-            return true;
-        } catch (error) {
-            console.error('Error verifying task code:', error);
-            return false;
-        }
+        const expected = await this.getCodeAfterCompletedTask(teamId, completedTaskNumber);
+        return Boolean(expected && actualCode.trim().toUpperCase() === expected);
     }
 
     // 🔥 Firebase: Complete task (updates Firestore)
     async completeTask(taskNumber, teamId = null) {
-        teamId = teamId || this.getCurrentTeamId();
-        if (!teamId) {
+        teamId = sanitizeTeamIdForRegistration(teamId || this.getCurrentTeamId() || '');
+        if (!teamId || teamId.length < 2) {
             alert('No team ID set!');
             return false;
         }
 
         try {
             const teamRef = db.collection('teams').doc(teamId);
-            const teamDoc = await teamRef.get();
+            let teamDoc = await teamRef.get();
             
             if (!teamDoc.exists) {
                 // Auto-create team if needed
                 await this.setTeamId(teamId);
+                teamDoc = await teamRef.get();
             }
+
+            await this.ensureTaskOutputCodes(teamId);
+            teamDoc = await teamRef.get();
+            const teamData = teamDoc.exists ? teamDoc.data() : {};
+            const outputCode =
+                teamData.taskOutputCodes && teamData.taskOutputCodes[String(taskNumber)]
+                    ? String(teamData.taskOutputCodes[String(taskNumber)]).toUpperCase()
+                    : taskNumber === 5
+                      ? 'WINNER'
+                      : '';
 
             const now = firebase.firestore.FieldValue.serverTimestamp();
             const regularTimestamp = new Date(); // Use regular Date for arrays
@@ -147,12 +375,11 @@ class FirebaseTreasureHunt {
             }
             
             // Add to task history (use regular Date instead of serverTimestamp)
-            const existingData = teamDoc.exists ? teamDoc.data() : {};
-            const taskHistory = existingData.taskHistory || [];
+            const taskHistory = teamData.taskHistory || [];
             taskHistory.push({
                 taskNumber: taskNumber,
                 completedAt: regularTimestamp, // Fixed: Use regular Date instead of serverTimestamp
-                taskCode: this.taskCodes[taskNumber]
+                taskCode: outputCode
             });
             updates.taskHistory = taskHistory;
             
@@ -162,7 +389,7 @@ class FirebaseTreasureHunt {
             await db.collection('submissions').add({
                 teamId: teamId,
                 taskNumber: taskNumber,
-                taskCode: this.taskCodes[taskNumber],
+                taskCode: outputCode,
                 timestamp: regularTimestamp // Fixed: Use regular Date
             });
 
@@ -254,21 +481,23 @@ class FirebaseTreasureHunt {
         }
 
         try {
-            // Delete all teams
-            const teamsSnapshot = await db.collection('teams').get();
             const batch = db.batch();
-            
-            teamsSnapshot.forEach(doc => {
-                batch.delete(doc.ref);
-            });
-            
-            // Delete all submissions
+
+            const teamsSnapshot = await db.collection('teams').get();
+            teamsSnapshot.forEach(doc => batch.delete(doc.ref));
+
             const submissionsSnapshot = await db.collection('submissions').get();
-            submissionsSnapshot.forEach(doc => {
-                batch.delete(doc.ref);
-            });
-            
+            submissionsSnapshot.forEach(doc => batch.delete(doc.ref));
+
+            const regSnap = await db.collection('registeredTeams').get();
+            regSnap.forEach(doc => batch.delete(doc.ref));
+
             await batch.commit();
+
+            await db.collection('meta').doc('registrationGate').set(
+                { count: 0, maxSlots: MAX_REGISTERED_TEAMS },
+                { merge: true }
+            );
             
             // Clear localStorage
             localStorage.clear();
@@ -287,10 +516,12 @@ class FirebaseTreasureHunt {
         try {
             const teams = await this.getAllTeams();
             const submissions = await this.getSubmissions();
+            const registeredTeams = await this.getAllRegisteredTeams();
             
             const exportData = {
                 teams: teams,
                 submissions: submissions,
+                registeredTeams: registeredTeams,
                 exportedAt: new Date().toISOString()
             };
             
@@ -330,7 +561,7 @@ function updateLeaderboard(teams) {
     if (!leaderboardBody) return;
     
     if (teams.length === 0) {
-        leaderboardBody.innerHTML = '<tr><td colspan="6" class="no-data">No teams registered yet</td></tr>';
+        leaderboardBody.innerHTML = '<tr><td colspan="6" class="no-data">No gameplay progress yet (teams appear here once registered and active)</td></tr>';
         return;
     }
     
@@ -389,22 +620,8 @@ function updateStatistics(teams) {
 }
 
 // 🔥 Updated game functions for Firebase
-async function setTeamIdTask1() {
-    const teamIdInput = document.getElementById('teamIdInput');
-    const teamId = teamIdInput.value.trim().toUpperCase();
-    
-    if (!teamId) {
-        alert('Please enter your Team ID');
-        return;
-    }
-    
-    if (await firebaseGame.setTeamId(teamId)) {
-        showGameContent(teamId);
-    }
-}
-
 async function verifyTask2() {
-    const teamId = document.getElementById('teamId2').value.trim().toUpperCase();
+    const teamId = sanitizeTeamIdForRegistration(document.getElementById('teamId2').value);
     const code = document.getElementById('previousCode').value.trim().toUpperCase();
     
     if (!teamId || !code) {
@@ -418,8 +635,8 @@ async function verifyTask2() {
         return;
     }
     
-    // Simple code check
-    if (code !== 'TC441') {
+    const ok = await firebaseGame.verifyTaskCode(teamId, 1, code);
+    if (!ok) {
         alert('❌ Incorrect code! You need the code from Task 1.');
         return;
     }
@@ -428,11 +645,12 @@ async function verifyTask2() {
         document.getElementById('clueSection').style.display = 'block';
         document.getElementById('teamDisplayName').textContent = teamId;
         document.querySelector('.verification-section').style.display = 'none';
+        await firebaseGame.populateTaskOutputCodeDisplay(teamId, 2);
     }
 }
 
 async function verifyTask3() {
-    const teamId = document.getElementById('teamId3').value.trim().toUpperCase();
+    const teamId = sanitizeTeamIdForRegistration(document.getElementById('teamId3').value);
     const code = document.getElementById('previousCode3').value.trim().toUpperCase();
     
     if (!teamId || !code) {
@@ -446,8 +664,8 @@ async function verifyTask3() {
         return;
     }
     
-    // Simple code check
-    if (code !== 'TC242') {
+    const ok = await firebaseGame.verifyTaskCode(teamId, 2, code);
+    if (!ok) {
         alert('❌ Incorrect code! You need the code from Task 2.');
         return;
     }
@@ -456,11 +674,12 @@ async function verifyTask3() {
         document.getElementById('clueSection3').style.display = 'block';
         document.getElementById('teamDisplayName').textContent = teamId;
         document.querySelector('.verification-section').style.display = 'none';
+        await firebaseGame.populateTaskOutputCodeDisplay(teamId, 3);
     }
 }
 
 async function verifyTask4() {
-    const teamId = document.getElementById('teamId4').value.trim().toUpperCase();
+    const teamId = sanitizeTeamIdForRegistration(document.getElementById('teamId4').value);
     const code = document.getElementById('previousCode4').value.trim().toUpperCase();
     
     if (!teamId || !code) {
@@ -474,8 +693,8 @@ async function verifyTask4() {
         return;
     }
     
-    // Simple code check
-    if (code !== 'TC803') {
+    const ok = await firebaseGame.verifyTaskCode(teamId, 3, code);
+    if (!ok) {
         alert('❌ Incorrect code! You need the code from Task 3.');
         return;
     }
@@ -484,6 +703,7 @@ async function verifyTask4() {
         document.getElementById('clueSection4').style.display = 'block';
         document.getElementById('teamDisplayName').textContent = teamId;
         document.querySelector('.verification-section').style.display = 'none';
+        await firebaseGame.populateTaskOutputCodeDisplay(teamId, 4);
     }
 }
 
@@ -552,7 +772,7 @@ async function completeTask4() {
 }
 
 async function verifyTask5() {
-    const teamId = document.getElementById('teamId5').value.trim().toUpperCase();
+    const teamId = sanitizeTeamIdForRegistration(document.getElementById('teamId5').value);
     const code = document.getElementById('previousCode5').value.trim().toUpperCase();
     
     if (!teamId || !code) {
@@ -566,8 +786,8 @@ async function verifyTask5() {
         return;
     }
     
-    // Simple code check
-    if (code !== 'TC200') {
+    const ok = await firebaseGame.verifyTaskCode(teamId, 4, code);
+    if (!ok) {
         alert('❌ Incorrect code! You need the code from Task 4.');
         return;
     }
@@ -634,11 +854,33 @@ function goToAdmin() {
     window.location.href = 'admin.html';
 }
 
+/**
+ * When a team id is in the URL or localStorage, block opening Task N if prior tasks are not complete.
+ */
+async function blockDirectAccess(taskNumber) {
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const fromUrl = (params.get('team') || '').trim();
+        const fromStorage = (localStorage.getItem('currentTeamId') || '').trim();
+        const teamId = sanitizeTeamIdForRegistration(fromUrl || fromStorage);
+        if (!teamId) return true;
+        const allowed = await canAccessTask(teamId, taskNumber);
+        if (!allowed) {
+            showSequenceError(taskNumber);
+        }
+        return allowed;
+    } catch (e) {
+        console.error('blockDirectAccess:', e);
+        return true;
+    }
+}
+
 // 🔒 SIMPLE SEQUENCE LOCK: Check if team can access this task
 async function canAccessTask(teamId, taskNumber) {
     // Task 1 is always accessible
     if (taskNumber === 1) return true;
     
+    teamId = sanitizeTeamIdForRegistration(teamId || '');
     // For other tasks, check if previous task is completed
     try {
         const progress = await firebaseGame.getTeamProgress(teamId);
@@ -675,4 +917,6 @@ document.addEventListener('DOMContentLoaded', function() {
 console.log('🔥 Firebase Treasure Hunt Game Initialized');
 
 // Export for global access
-window.firebaseGame = firebaseGame; 
+window.firebaseGame = firebaseGame;
+window.TREASURE_HUNT_MAX_REGISTERED_TEAMS = MAX_REGISTERED_TEAMS;
+window.sanitizeTeamIdForRegistration = sanitizeTeamIdForRegistration; 

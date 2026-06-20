@@ -32,7 +32,7 @@
             </div>
             <div class="form-group">
                 <label for="previousCode5">Previous Task Code:</label>
-                <input type="text" id="previousCode5" maxlength="5">
+                <input type="text" id="previousCode5" maxlength="12" autocomplete="off">
             </div>
             <button onclick="verifyTask5()" id="verifyBtn5">Verify & Win!</button>
         </div>
@@ -87,8 +87,8 @@
             return urlParams.get(name);
         }
         
-        window.onload = function() {
-            if (!blockDirectAccess(5)) {
+        window.onload = async function() {
+            if (!(await blockDirectAccess(5))) {
                 return;
             }
             
@@ -97,23 +97,22 @@
                 document.getElementById('teamId5').value = urlTeamId.toUpperCase();
             }
             displayTeamInfo();
-            loadTaskStatus();
+            await loadTaskStatus();
         };
         
-        function loadTaskStatus() {
+        async function loadTaskStatus() {
             const teamId = document.getElementById('teamId5').value || firebaseGame.getCurrentTeamId();
             if (!teamId) return;
             
-            firebaseGame.getTeamProgress(teamId).then(progress => {
-                if (progress && progress.completedTasks >= 5) {
-                    document.getElementById('clueSection5').style.display = 'block';
-                    document.getElementById('teamDisplayName').textContent = teamId;
-                    document.getElementById('completeBtn5').textContent = '🎉 VICTORY CLAIMED!';
-                    document.getElementById('completeBtn5').disabled = true;
-                    document.getElementById('completeBtn5').style.opacity = '0.7';
-                    document.body.classList.add('celebration-bg');
-                }
-            });
+            const progress = await firebaseGame.getTeamProgress(teamId);
+            if (progress && progress.completedTasks >= 5) {
+                document.getElementById('clueSection5').style.display = 'block';
+                document.getElementById('teamDisplayName').textContent = teamId;
+                document.getElementById('completeBtn5').textContent = '🎉 VICTORY CLAIMED!';
+                document.getElementById('completeBtn5').disabled = true;
+                document.getElementById('completeBtn5').style.opacity = '0.7';
+                document.body.classList.add('celebration-bg');
+            }
         }
         
         function displayTeamInfo() {}
