@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Team Registration — Pride Treasure Hunt</title>
+    <link rel="stylesheet" href="style.css?v=4">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    <script src="firebase-script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="hero-section" id="lateMessage" style="display: none;">
+            <div class="option-card registration-late-card">
+                <h1><span class="pride-flag" aria-hidden="true"></span> Thank you for stopping by</h1>
+                <p class="registration-late-lead">
+                    We are truly grateful for your enthusiasm. Unfortunately, all available team spots for this
+                    treasure hunt have already been filled.
+                </p>
+                <p>
+                    We know that is disappointing, and we are sorry we could not save a place for your team this time.
+                    We would love to see you at a future event—please stay in touch with your organizers for the next
+                    opportunity.
+                </p>
+                <p class="registration-muted">Wishing you a wonderful day filled with pride and community.</p>
+                <button type="button" class="btn-secondary" onclick="window.location.href='index.html'">Return home</button>
+            </div>
+        </div>
+
+        <div id="registrationFormWrap">
+            <div class="hero-section">
+                <h1><span class="pride-flag" aria-hidden="true"></span> Team registration</h1>
+                <p class="registration-intro">
+                    Register your team for the Pride Treasure Hunt. The first <strong id="maxSlotsLabel">5</strong> teams to complete this form secure a spot.
+                    Each team may have <strong>one leader</strong> and up to <strong>four</strong> additional members
+                    (<strong>five people total</strong>, including the leader).
+                </p>
+                <p class="registration-slots" id="slotsSummary">Checking available spots…</p>
+            </div>
+
+            <div class="option-card registration-card">
+                <form id="registrationForm" class="registration-form">
+                    <div class="form-group">
+                        <label for="regTeamName">Team name</label>
+                        <input type="text" id="regTeamName" required maxlength="40" autocomplete="organization"
+                            placeholder="e.g. Rainbow Runners (letters &amp; numbers only; becomes your Team ID)">
+                        <p class="help-text">We use letters and numbers only for your Team ID (spaces and symbols are removed).</p>
+                    </div>
+                    <div class="form-group">
+                        <label for="regLeaderName">Team leader — full name</label>
+                        <input type="text" id="regLeaderName" required maxlength="80" autocomplete="name" placeholder="Leader’s full name">
+                    </div>
+                    <p class="registration-members-heading">Other team members (optional, up to four)</p>
+                    <div class="form-group">
+                        <label for="regMember1">Member 2</label>
+                        <input type="text" id="regMember1" maxlength="80" autocomplete="off" placeholder="Full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="regMember2">Member 3</label>
+                        <input type="text" id="regMember2" maxlength="80" autocomplete="off" placeholder="Full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="regMember3">Member 4</label>
+                        <input type="text" id="regMember3" maxlength="80" autocomplete="off" placeholder="Full name">
+                    </div>
+                    <div class="form-group">
+                        <label for="regMember4">Member 5</label>
+                        <input type="text" id="regMember4" maxlength="80" autocomplete="off" placeholder="Full name">
+                    </div>
+                    <p id="formError" class="form-error" role="alert" style="display: none;"></p>
+                    <button type="submit" class="btn-primary-wide" id="submitRegistration">Submit registration</button>
+                </form>
+                <p class="help-text registration-after">After you register, use the same team name when you play. Keep the link your organizer shared for the hunt.</p>
+                <button type="button" class="btn-secondary" onclick="window.location.href='index.html'">Home</button>
+            </div>
+        </div>
+
+        <div id="successWrap" style="display: none;" class="hero-section">
+            <div class="option-card registration-success-card">
+                <h2><span class="rainbow-icon" aria-hidden="true"></span> You are in!</h2>
+                <p>Your team <strong id="successTeamId"></strong> is registered as spot <strong id="successSlot"></strong>.</p>
+                <p id="successSanitizedNote" class="help-text"></p>
+                <p>Please save your <strong>Team name</strong> exactly as you will type it during the hunt (same letters and numbers).</p>
+                <button type="button" class="btn-primary-wide" onclick="window.location.href='index.html'">Continue to home</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('maxSlotsLabel').textContent = String(typeof TREASURE_HUNT_MAX_REGISTERED_TEAMS !== 'undefined' ? TREASURE_HUNT_MAX_REGISTERED_TEAMS : 5);
+
+        async function refreshSlotsUi() {
+            const full = await firebaseGame.isRegistrationFull();
+            const count = await firebaseGame.getRegistrationSlotCount();
+            const max = typeof TREASURE_HUNT_MAX_REGISTERED_TEAMS !== 'undefined' ? TREASURE_HUNT_MAX_REGISTERED_TEAMS : 5;
+            const el = document.getElementById('slotsSummary');
+            if (full) {
+                el.textContent = `All ${max} team spots are filled.`;
+                showLateUi();
+            } else {
+                el.textContent = `${count} of ${max} team spots are filled — register soon to secure your place.`;
+            }
+        }
+
+        function showLateUi() {
+            document.getElementById('registrationFormWrap').style.display = 'none';
+            document.getElementById('successWrap').style.display = 'none';
+            document.getElementById('lateMessage').style.display = 'block';
+        }
+
+        function showFormError(msg) {
+            const el = document.getElementById('formError');
+            el.textContent = msg;
+            el.style.display = msg ? 'block' : 'none';
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            await refreshSlotsUi();
+
+            document.getElementById('registrationForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                showFormError('');
+
+                if (await firebaseGame.isRegistrationFull()) {
+                    showLateUi();
+                    return;
+                }
+
+                const teamRaw = document.getElementById('regTeamName').value;
+                const leader = document.getElementById('regLeaderName').value;
+                const members = [
+                    document.getElementById('regMember1').value,
+                    document.getElementById('regMember2').value,
+                    document.getElementById('regMember3').value,
+                    document.getElementById('regMember4').value
+                ];
+
+                const btn = document.getElementById('submitRegistration');
+                btn.disabled = true;
+                const result = await firebaseGame.registerTeamWithRoster(teamRaw, leader, members);
+                btn.disabled = false;
+
+                if (result.ok) {
+                    const id = sanitizeTeamIdForRegistration(teamRaw);
+                    document.getElementById('registrationFormWrap').style.display = 'none';
+                    document.getElementById('lateMessage').style.display = 'none';
+                    document.getElementById('successWrap').style.display = 'block';
+                    document.getElementById('successTeamId').textContent = id;
+                    document.getElementById('successSlot').textContent = String(result.slot);
+                    document.getElementById('successSanitizedNote').textContent =
+                        'Your official Team ID for the game is: ' + id + '. Please use it exactly (same spelling) when you enter your team at each task.';
+                } else {
+                    if (result.code === 'REGISTRATION_FULL') {
+                        showLateUi();
+                    } else {
+                        showFormError(result.message || 'Registration could not be completed.');
+                    }
+                }
+                await refreshSlotsUi();
+            });
+        });
+    </script>
+</body>
+</html>

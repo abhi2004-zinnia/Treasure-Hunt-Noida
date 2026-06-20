@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Pride Treasure Hunt</title>
+    <link rel="stylesheet" href="style.css?v=4">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 🔥 Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="firebase-config.js"></script>
+    <script src="firebase-script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1><span class="pride-flag" aria-hidden="true"></span> Pride Hunt Admin
+            <span class="real-time-indicator">🔴 LIVE</span>
+            <span id="firebase-status" class="firebase-status">📡 Connecting...</span>
+        </h1>
+        
+        <div class="admin-controls">
+            <button onclick="refreshData()" class="btn-refresh">🔄 Refresh</button>
+            <button onclick="clearAllData()" class="btn-clear">🗑️ Clear All Data</button>
+            <button onclick="exportData()" class="btn-export">📥 Export Data</button>
+            <button onclick="goHome()" class="btn-secondary">🏠 Home</button>
+        </div>
+        
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="registrationSlots">0/5</div>
+                <div class="stat-label">Registration slots</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="totalTeams">0</div>
+                <div class="stat-label">Total Teams</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="completedTeams">0</div>
+                <div class="stat-label">Completed</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="inProgressTeams">0</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+        </div>
+        
+        <h2><span class="pride-flag pride-flag-sm" aria-hidden="true"></span> Registered teams</h2>
+        <p class="admin-subtitle" id="registrationIntro">Teams that completed the registration form (leader and members).</p>
+        <table class="leaderboard-table registration-roster">
+            <thead>
+                <tr>
+                    <th>Slot</th>
+                    <th>Team ID</th>
+                    <th>Leader</th>
+                    <th>Other members</th>
+                    <th>People</th>
+                </tr>
+            </thead>
+            <tbody id="registrationRosterBody">
+                <tr>
+                    <td colspan="5" class="no-data">Loading…</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <h2><span class="pride-flag pride-flag-sm" aria-hidden="true"></span> Live Leaderboard</h2>
+        <table class="leaderboard-table">
+            <thead>
+                <tr>
+                    <th>Rank</th>
+                    <th>Team ID</th>
+                    <th>Progress</th>
+                    <th>Current Task</th>
+                    <th>Completion Time</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="leaderboardBody">
+                <tr>
+                    <td colspan="6" class="no-data">Loading teams...</td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <div class="pride-wisdom-box">
+            <h3><span class="rainbow-icon" aria-hidden="true"></span> Pride Hunt Wisdom:</h3>
+            <p>
+                "The real treasure isn't gold or jewels – it's the love, courage, and community we celebrate together!" <span class="pride-flag pride-flag-sm" aria-hidden="true"></span> ✨
+            </p>
+        </div>
+    </div>
+    
+    <script>
+        function updateFirebaseStatus(connected) {
+            const statusElement = document.getElementById('firebase-status');
+            if (connected) {
+                statusElement.textContent = '📡 Connected';
+                statusElement.classList.add('connected');
+            } else {
+                statusElement.textContent = '📡 Connecting...';
+                statusElement.classList.remove('connected');
+            }
+        }
+        
+        async function refreshData() {
+            try {
+                updateFirebaseStatus(true);
+                const teams = await firebaseGame.getAllTeams();
+                updateLeaderboard(teams);
+                updateStatistics(teams);
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+                updateFirebaseStatus(false);
+            }
+        }
+        
+        async function clearAllData() {
+            const success = await firebaseGame.clearAllData();
+            if (success) {
+                refreshData();
+            }
+        }
+        
+        async function exportData() {
+            await firebaseGame.exportData();
+        }
+        
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+        
+        function escapeHtml(str) {
+            if (str == null) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+        
+        function updateRegistrationRoster(rows) {
+            const body = document.getElementById('registrationRosterBody');
+            const max = typeof TREASURE_HUNT_MAX_REGISTERED_TEAMS !== 'undefined' ? TREASURE_HUNT_MAX_REGISTERED_TEAMS : 5;
+            const slotsEl = document.getElementById('registrationSlots');
+            if (slotsEl) {
+                slotsEl.textContent = rows.length + '/' + max;
+            }
+            if (!body) return;
+            if (!rows.length) {
+                body.innerHTML = '<tr><td colspan="5" class="no-data">No teams have registered yet</td></tr>';
+                return;
+            }
+            let html = '';
+            rows.forEach(row => {
+                const members = Array.isArray(row.memberNames) ? row.memberNames : [];
+                const membersStr = members.length ? escapeHtml(members.join(', ')) : '—';
+                html += '<tr>' +
+                    '<td>' + escapeHtml(row.registrationSlot) + '</td>' +
+                    '<td><strong>' + escapeHtml(row.id || row._docId) + '</strong></td>' +
+                    '<td>' + escapeHtml(row.leaderName) + '</td>' +
+                    '<td>' + membersStr + '</td>' +
+                    '<td>' + escapeHtml(row.peopleCount != null ? row.peopleCount : (1 + members.length)) + '</td>' +
+                    '</tr>';
+            });
+            body.innerHTML = html;
+        }
+        
+        window.onload = function() {
+            updateFirebaseStatus(false);
+            refreshData();
+            firebaseGame.listenToRegisteredTeams(rows => {
+                updateRegistrationRoster(rows);
+            });
+        };
+    </script>
+</body>
+</html>

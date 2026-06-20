@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pride Treasure Hunt</title>
+    <link rel="stylesheet" href="style.css?v=4">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 🔥 Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="firebase-config.js"></script>
+    <script src="firebase-script.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="hero-section">
+            <h1><span class="pride-flag" aria-hidden="true"></span> Pride Treasure Hunt</h1>
+            <p>Celebrate love, unity, and adventure — find the rainbow treasures!</p>
+            
+            <div class="options">
+                <div class="option-card">
+                    <h3>👥 For Teams</h3>
+                    <p><strong>New teams:</strong> register first using the link below (only the first five teams can join).</p>
+                    <p style="margin: 12px 0;"><a href="register.html" class="btn-register-link">Register your team</a></p>
+                    <p style="margin-top: 16px;">Already registered? Enter your <strong>exact Team ID</strong> (same as at registration), then start the hunt.</p>
+                    <div class="team-setup">
+                        <input type="text" id="teamId" maxlength="40" placeholder="Team ID (letters &amp; numbers)">
+                        <button onclick="startHunt()">Start Hunt</button>
+                    </div>
+                </div>
+                
+                <div class="option-card">
+                    <h3>🎮 For Admin</h3>
+                    <p>Monitor team progress and view the leaderboard</p>
+                    <button onclick="window.location.href='admin.html'">Admin Dashboard</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h2><span class="pride-flag pride-flag-sm" aria-hidden="true"></span> Game Rules</h2>
+            <ul>
+                <li><span class="rainbow-icon" aria-hidden="true"></span> Scan QR codes in sequence along the rainbow trail</li>
+                <li>📝 Read each clue carefully</li>
+                <li>🔢 Submit the previous task code to proceed</li>
+                <li>✨ Complete all tasks and celebrate Pride!</li>
+            </ul>
+        </div>
+    </div>
+    
+    <script>
+        async function startHunt() {
+            const teamId = sanitizeTeamIdForRegistration(document.getElementById('teamId').value);
+            if (!teamId || teamId.length < 2) {
+                alert('Please enter your Team ID (at least 2 letters or numbers, the same as when you registered).');
+                return;
+            }
+            
+            if (await firebaseGame.setTeamId(teamId)) {
+                window.location.href = 'task1.html';
+            }
+        }
+    </script>
+</body>
+</html>

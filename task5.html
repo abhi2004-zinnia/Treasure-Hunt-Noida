@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task 5 - Pride Treasure Hunt</title>
+    <link rel="stylesheet" href="style.css?v=4">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 🔥 Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    
+    <!-- Firebase Configuration -->
+    <script src="firebase-config.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="task-header">
+            <h1><span class="pride-flag" aria-hidden="true"></span> FINAL CHALLENGE - WINNER!</h1>
+            <div class="progress-bar">
+                <div class="progress" style="width: 100%;"></div>
+            </div>
+        </div>
+        
+        <div class="verification-section">
+            <h2>🔐 Final Verification</h2>
+            <div class="form-group">
+                <label for="teamId5">Team ID:</label>
+                <input type="text" id="teamId5" style="text-transform: uppercase;">
+            </div>
+            <div class="form-group">
+                <label for="previousCode5">Previous Task Code:</label>
+                <input type="text" id="previousCode5" maxlength="12" autocomplete="off">
+            </div>
+            <button onclick="verifyTask5()" id="verifyBtn5">Verify & Win!</button>
+        </div>
+        
+        <div class="clue-section" id="clueSection5" style="display: none;">
+            <h2>🎉 Welcome Team <span id="teamDisplayName">TEAM</span>!</h2>
+            
+            <div class="winner-section">
+                <h1 class="pride-text" style="font-size: 3rem; margin-bottom: 1rem;">
+                    🎊 CONGRATULATIONS! 🎊
+                </h1>
+
+                <h2 class="pride-text" style="font-size: 2rem; margin-bottom: 1rem;">
+                    <span class="pride-flag pride-flag-sm" aria-hidden="true"></span> YOU WON! <span class="pride-flag pride-flag-sm" aria-hidden="true"></span>
+                </h2>
+
+                <div class="winner-banner">
+                    <h3>🌟 PRIDE TREASURE HUNT CHAMPION! 🌟</h3>
+                </div>
+
+                <p class="winner-subtext">
+                    🎯 You have successfully completed all challenges!<br>
+                    🚀 Amazing teamwork and problem-solving skills!<br>
+                    🎖️ You are officially declared as the WINNER!
+                </p>
+
+                <div class="winner-celebration">
+                    <h4>🎊 Celebration Time! 🎊</h4>
+                    <p>
+                        🏅 Claim your prize and celebrate Pride!<br>
+                        📸 Don't forget to take a winning team photo!<br>
+                        <span class="rainbow-icon" aria-hidden="true"></span> Share your success with everyone!
+                    </p>
+                </div>
+            </div>
+            
+            <button onclick="completeTask5()" id="completeBtn5" class="btn-success" style="font-size: 1.2rem; padding: 15px 30px;">
+                <span class="pride-flag pride-flag-sm" aria-hidden="true"></span> CLAIM VICTORY! <span class="pride-flag pride-flag-sm" aria-hidden="true"></span>
+            </button>
+        </div>
+        
+        <div class="navigation">
+            <button onclick="goHome()" class="btn-secondary">🏠 Home</button>
+            <button onclick="goToAdmin()" class="btn-admin">📊 View Results</button>
+        </div>
+    </div>
+    
+    <script src="firebase-script.js"></script>
+    <script>
+        function getURLParameter(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+        
+        window.onload = async function() {
+            if (!(await blockDirectAccess(5))) {
+                return;
+            }
+            
+            const urlTeamId = getURLParameter('team');
+            if (urlTeamId) {
+                document.getElementById('teamId5').value = urlTeamId.toUpperCase();
+            }
+            displayTeamInfo();
+            await loadTaskStatus();
+        };
+        
+        async function loadTaskStatus() {
+            const teamId = document.getElementById('teamId5').value || firebaseGame.getCurrentTeamId();
+            if (!teamId) return;
+            
+            const progress = await firebaseGame.getTeamProgress(teamId);
+            if (progress && progress.completedTasks >= 5) {
+                document.getElementById('clueSection5').style.display = 'block';
+                document.getElementById('teamDisplayName').textContent = teamId;
+                document.getElementById('completeBtn5').textContent = '🎉 VICTORY CLAIMED!';
+                document.getElementById('completeBtn5').disabled = true;
+                document.getElementById('completeBtn5').style.opacity = '0.7';
+                document.body.classList.add('celebration-bg');
+            }
+        }
+        
+        function displayTeamInfo() {}
+    </script>
+</body>
+</html>
